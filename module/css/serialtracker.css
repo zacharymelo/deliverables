@@ -1,0 +1,178 @@
+/* Serial Tracker styles (prototype).
+ *
+ * A titled panel containing one compact horizontal lifecycle stepper per serial.
+ * Colors mirror Lead Tracker so the two widgets read as a family during the
+ * side-by-side comparison.
+ */
+
+.serialtracker-panel {
+	--serialtracker-complete: #2e7d32; /* green */
+	--serialtracker-current:  #1976d2; /* blue  */
+	--serialtracker-pending:  #bdbdbd; /* grey  */
+	--serialtracker-ended:    #607d8b; /* slate */
+	--serialtracker-line:     #d0d0d0;
+
+	width: 100%;
+	box-sizing: border-box;
+	margin: 10px 0 16px 0;
+	padding: 12px 12px 8px;
+	background: var(--colorbacktitle1, #fbfbfb);
+	border: 1px solid var(--colorblockborder, #e0e0e0);
+	border-radius: 6px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.serialtracker-head {
+	margin: 0 0 8px 2px;
+}
+.serialtracker-title {
+	font-weight: bold;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--colortexttitlenotab, #444);
+}
+.serialtracker-sample-tag {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 1px 7px;
+	border-radius: 9px;
+	font-size: 10px;
+	font-weight: bold;
+	text-transform: uppercase;
+	background: #fff3e0;
+	color: #e65100;
+	border: 1px solid #ffcc80;
+}
+
+/* One serial = one row: identity column + stepper column. */
+.serialtracker-row {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 8px 4px;
+	border-top: 1px solid #ececec;
+}
+.serialtracker-row:first-of-type {
+	border-top: none;
+}
+
+.serialtracker-ident {
+	flex: 0 0 180px;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.serialtracker-serial {
+	font-weight: bold;
+	font-family: monospace;
+	font-size: 12px;
+	color: #222;
+	overflow-wrap: break-word;
+}
+.serialtracker-product {
+	color: #777;
+	font-size: 11px;
+	overflow-wrap: break-word;
+}
+
+.serialtracker-track {
+	display: flex;
+	flex: 1 1 auto;
+	align-items: flex-start;
+}
+
+.serialtracker-step {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1 1 0;
+	min-width: 56px;
+	text-align: center;
+	padding: 0 2px;
+}
+
+.serialtracker-connector {
+	position: absolute;
+	top: 11px;
+	right: 50%;
+	width: 100%;
+	height: 3px;
+	background: var(--serialtracker-line);
+	border-radius: 2px;
+	z-index: 0;
+}
+.serialtracker-connector-complete {
+	background: var(--serialtracker-complete);
+}
+
+.serialtracker-circle {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #ffffff;
+	border: 3px solid var(--serialtracker-pending);
+	color: #ffffff;
+	font-size: 11px;
+	font-weight: bold;
+	box-sizing: border-box;
+}
+.serialtracker-glyph { line-height: 1; }
+
+.serialtracker-label {
+	display: block;
+	margin-top: 5px;
+	color: var(--colortexttitlenotab, #555);
+	max-width: 92px;
+	font-size: 11px;
+	overflow-wrap: break-word;
+}
+
+/* --- States --- */
+.serialtracker-complete .serialtracker-circle {
+	background: var(--serialtracker-complete);
+	border-color: var(--serialtracker-complete);
+}
+.serialtracker-current .serialtracker-circle {
+	background: var(--serialtracker-current);
+	border-color: var(--serialtracker-current);
+	box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.25);
+}
+.serialtracker-current .serialtracker-label {
+	font-weight: bold;
+}
+.serialtracker-pending .serialtracker-circle {
+	background: #ffffff;
+	border-color: var(--serialtracker-pending);
+	color: var(--serialtracker-pending);
+}
+.serialtracker-ended .serialtracker-circle {
+	background: var(--serialtracker-ended);
+	border-color: var(--serialtracker-ended);
+}
+.serialtracker-ended .serialtracker-label {
+	color: var(--serialtracker-ended);
+	font-weight: bold;
+}
+
+/* --- Narrow screens: stack the identity above the stepper. --- */
+@media (max-width: 767px) {
+	.serialtracker-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+	.serialtracker-ident {
+		flex-basis: auto;
+	}
+	.serialtracker-track {
+		width: 100%;
+	}
+}

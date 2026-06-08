@@ -1,0 +1,19 @@
+# Serial Tracker — English
+# Copyright (C) 2026 Serial Tracker contributors
+
+# Module
+Module500122Name = Serial Tracker
+Module500122Desc = Per-serial lifecycle tracker prototype rendered on the project card.
+
+# UI
+SerialtrackerTitle = Serial lifecycle
+SerialtrackerSampleTag = Sample data
+
+# Lifecycle stages
+SerialtrackerStageManufactured = Manufactured
+SerialtrackerStageShipped = Shipped
+SerialtrackerStageWarranty = Under Warranty
+SerialtrackerStageSupportEnded = Support Ended
+
+# Permissions
+Permission50012201 = See the serial lifecycle tracker
