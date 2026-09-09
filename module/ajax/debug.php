@@ -183,5 +183,53 @@ if ($projectId > 0) {
 	);
 }
 
+// --- ATP / shortfall discovery: verify supply/demand/stock schema before wiring ---
+$out['atp'] = array();
+
+// Warehouses (does ATP need to be per-warehouse?).
+$out['atp']['warehouses'] = st_probe($db, "SELECT rowid, ref, label FROM ".MAIN_DB_PREFIX."entrepot", 50);
+
+// Stock table shape (columns + a few rows — reveals reel / fk_entrepot / fk_product).
+$out['atp']['product_stock_sample'] = st_probe($db, "SELECT * FROM ".MAIN_DB_PREFIX."product_stock LIMIT 3", 3);
+
+// One order row (all columns) to find the delivery-date column name.
+$out['atp']['commande_columns'] = st_probe($db, "SELECT * FROM ".MAIN_DB_PREFIX."commande ORDER BY rowid DESC LIMIT 1", 1);
+
+// MO status distribution — which values mean "open/incoming" vs "done".
+$out['atp']['mrp_mo_status_counts'] = st_probe($db, "SELECT status, COUNT(*) as n, SUM(qty) as total_qty FROM ".MAIN_DB_PREFIX."mrp_mo GROUP BY status ORDER BY status", 20);
+
+// Reservation / allocation tables (for the "commitments" source).
+$out['atp']['reservation_discovery'] = st_probe(
+	$db,
+	"SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()"
+		." AND (table_name LIKE '%reserv%' OR table_name LIKE '%stockreserv%' OR table_name LIKE '%inventory%' OR table_name LIKE '%allocat%')"
+		." ORDER BY table_name",
+	50
+);
+
+// For a specific product (pass &product_id=N, e.g. a Stage machine): the raw ATP inputs.
+$productId = GETPOSTINT('product_id');
+$out['atp']['product_id'] = $productId;
+if ($productId > 0) {
+	$prid = (int) $productId;
+	$out['atp']['on_hand'] = st_probe(
+		$db,
+		"SELECT p.rowid, p.ref, p.label, p.stock as cached_stock,"
+			." (SELECT COALESCE(SUM(ps.reel), 0) FROM ".MAIN_DB_PREFIX."product_stock ps WHERE ps.fk_product = p.rowid) as sum_warehouse_stock"
+			." FROM ".MAIN_DB_PREFIX."product p WHERE p.rowid = ".$prid,
+		1
+	);
+	$out['atp']['open_mo'] = st_probe($db, "SELECT status, COUNT(*) as n, SUM(qty) as qty FROM ".MAIN_DB_PREFIX."mrp_mo WHERE fk_product = ".$prid." GROUP BY status ORDER BY status", 20);
+	$out['atp']['open_demand'] = st_probe(
+		$db,
+		"SELECT c.rowid as commande_id, c.ref, c.fk_statut, c.fk_projet, c.fk_soc, cd.qty as ordered"
+			." FROM ".MAIN_DB_PREFIX."commandedet cd"
+			." INNER JOIN ".MAIN_DB_PREFIX."commande c ON c.rowid = cd.fk_commande"
+			." WHERE cd.fk_product = ".$prid." AND c.fk_statut IN (1, 2)"
+			." ORDER BY c.rowid DESC",
+		100
+	);
+}
+
 print json_encode($out, JSON_PRETTY_PRINT);
 exit;
