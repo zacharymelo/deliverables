@@ -498,7 +498,7 @@ class SerialLifecycleResolver
 		}
 
 		$sql = "SELECT cd.rowid as line_id, cd.fk_product, cd.qty,"
-			." c.ref as order_ref,"
+			." c.rowid as commande_id, c.ref as order_ref,"
 			." p.ref as product_ref, p.label as product_label, COALESCE(p.tobatch, 0) as tobatch"
 			." FROM ".MAIN_DB_PREFIX."commandedet cd"
 			." INNER JOIN ".MAIN_DB_PREFIX."commande c ON c.rowid = cd.fk_commande"
@@ -516,11 +516,12 @@ class SerialLifecycleResolver
 		while ($o = $this->db->fetch_object($res)) {
 			$id = (int) $o->line_id;
 			$rows[$id] = array(
-				'line_id'    => $id,
-				'product_id' => (int) $o->fk_product,
-				'product'    => ($o->product_label != '' ? $o->product_label : $o->product_ref),
-				'order_ref'  => $o->order_ref,
-				'ordered'    => (float) $o->qty,
+				'line_id'     => $id,
+				'product_id'  => (int) $o->fk_product,
+				'product'     => ($o->product_label != '' ? $o->product_label : $o->product_ref),
+				'order_ref'   => $o->order_ref,
+				'commande_id' => (int) $o->commande_id,
+				'ordered'     => (float) $o->qty,
 				'serialized' => ((int) $o->tobatch > 0),
 				'shipped'    => 0,
 				'serials'    => array(),

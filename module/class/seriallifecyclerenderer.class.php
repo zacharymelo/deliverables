@@ -309,6 +309,8 @@ class SerialLifecycleRenderer
 			return $bout - $aout;
 		});
 
+		$bulkpo = (function_exists('isModEnabled') && isModEnabled('bulkpo'));
+
 		$out  = '<div class="serialtracker-panel">';
 		$out .= '<div class="serialtracker-tablewrap"><table class="serialtracker-deliverables">';
 		$out .= '<thead><tr>';
@@ -325,11 +327,47 @@ class SerialLifecycleRenderer
 		$out .= '</tr></thead><tbody>';
 
 		foreach ($rows as $r) {
-			$out .= $this->renderDeliverableRow($r);
+			$out .= $this->renderDeliverableRow($r, $bulkpo);
 		}
 
-		$out .= '</tbody></table></div></div>';
+		$out .= '</tbody></table></div>';
+
+		// Multi-select batch bar: group the checked purchased-short lines into one
+		// pre-seeded Bulk PO. Only when the bulkpo module is available.
+		if ($bulkpo) {
+			$wiz = dol_buildpath('/bulkpo/bulkpo_wizard.php', 1);
+			$out .= '<div id="serialtracker-pobar" class="serialtracker-pobar" style="display:none;">';
+			$out .= '<span class="serialtracker-pobar-hint">'.dol_escape_htmltag($langs->trans('SerialtrackerPoSelectHint')).'</span> ';
+			$out .= '<a href="#" id="serialtracker-po-btn" class="serialtracker-act serialtracker-act-po" data-url="'.dol_escape_htmltag($wiz).'">'
+				.dol_escape_htmltag($langs->trans('SerialtrackerCreatePoSelected')).' (<span id="serialtracker-po-count">0</span>)</a>';
+			$out .= '</div>';
+			$out .= $this->poBatchScript();
+		}
+
+		$out .= '</div>';
 		return $out;
+	}
+
+	/**
+	 *  Inline JS for the multi-select → one-PO batch bar. Vanilla, no deps.
+	 *  Collects checked purchased-short lines and deep-links to the Bulk PO wizard
+	 *  pre-seeded with base64(JSON [{id,qty}]).
+	 *
+	 *  @return string
+	 */
+	private function poBatchScript()
+	{
+		return "<script>(function(){\n"
+			." var checks=[].slice.call(document.querySelectorAll('.serialtracker-po-check'));\n"
+			." var bar=document.getElementById('serialtracker-pobar');\n"
+			." var btn=document.getElementById('serialtracker-po-btn');\n"
+			." var cnt=document.getElementById('serialtracker-po-count');\n"
+			." if(!bar||!btn||!cnt){return;}\n"
+			." function upd(){var n=0;for(var i=0;i<checks.length;i++){if(checks[i].checked)n++;}cnt.textContent=n;bar.style.display=n>0?'':'none';}\n"
+			." for(var i=0;i<checks.length;i++){checks[i].addEventListener('change',upd);}\n"
+			." btn.addEventListener('click',function(e){e.preventDefault();var sel=[];for(var i=0;i<checks.length;i++){if(checks[i].checked){sel.push({id:parseInt(checks[i].getAttribute('data-pid'),10),qty:parseFloat(checks[i].getAttribute('data-qty'))});}}if(!sel.length){return;}var seed=btoa(JSON.stringify(sel));window.location=btn.getAttribute('data-url')+'?seed='+encodeURIComponent(seed);});\n"
+			." upd();\n"
+			."})();</script>\n";
 	}
 
 	/**
@@ -338,7 +376,7 @@ class SerialLifecycleRenderer
 	 *  @param  array  $r
 	 *  @return string
 	 */
-	private function renderDeliverableRow($r)
+	private function renderDeliverableRow($r, $bulkpo = false)
 	{
 		global $langs;
 
@@ -348,7 +386,14 @@ class SerialLifecycleRenderer
 		$out  = '<tr'.$rowCls.'>';
 		$out .= '<td>'.dol_escape_htmltag($r['product']);
 		if (!empty($r['order_ref'])) {
-			$out .= '<span class="serialtracker-rowmeta">'.dol_escape_htmltag($r['order_ref']).'</span>';
+			// One-click breadcrumb to the sales order this line belongs to.
+			if (!empty($r['commande_id'])) {
+				$ou = DOL_URL_ROOT.'/commande/card.php?id='.((int) $r['commande_id']);
+				$out .= '<a class="serialtracker-rowmeta serialtracker-orderlink" href="'.dol_escape_htmltag($ou).'" title="'
+					.dol_escape_htmltag($langs->trans('SerialtrackerOpenOrder')).'">'.dol_escape_htmltag($r['order_ref']).' &rsaquo;</a>';
+			} else {
+				$out .= '<span class="serialtracker-rowmeta">'.dol_escape_htmltag($r['order_ref']).'</span>';
+			}
 		}
 		$out .= '</td>';
 		$out .= '<td class="c">'.$this->fmt($r['ordered']).'</td>';
@@ -384,7 +429,13 @@ class SerialLifecycleRenderer
 				$out .= '<a class="serialtracker-act serialtracker-act-mo" href="'.dol_escape_htmltag($u).'">'
 					.dol_escape_htmltag($langs->trans('SerialtrackerCreateMO', $this->fmt($short))).'</a>';
 			} else {
-				$u = DOL_URL_ROOT.'/product/fournisseurs.php?id='.((int) $r['product_id']);
+				// Checkbox groups this purchased-short line into a multi-line PO;
+				// the link beside it still does a single-item reorder.
+				if ($bulkpo) {
+					$out .= '<label class="serialtracker-po-pick" title="'.dol_escape_htmltag($langs->trans('SerialtrackerPoSelectHint')).'">'
+						.'<input type="checkbox" class="serialtracker-po-check" data-pid="'.((int) $r['product_id']).'" data-qty="'.dol_escape_htmltag($this->fmt($short)).'"></label> ';
+				}
+				$u = $this->reorderUrl((int) $r['product_id'], $short);
 				$out .= '<a class="serialtracker-act serialtracker-act-po" href="'.dol_escape_htmltag($u).'">'
 					.dol_escape_htmltag($langs->trans('SerialtrackerReorder', $this->fmt($short))).'</a>';
 			}
@@ -395,6 +446,26 @@ class SerialLifecycleRenderer
 
 		$out .= '</tr>';
 		return $out;
+	}
+
+	/**
+	 *  Build the "Reorder" target for a short purchased product.
+	 *
+	 *  Prefers the Bulk PO wizard (numero-independent, resolved by dol_buildpath)
+	 *  pre-seeded with the shortfall product+qty when that module is installed;
+	 *  otherwise falls back to the product's supplier tab as a stopgap.
+	 *
+	 *  @param  int    $productId
+	 *  @param  float  $qty
+	 *  @return string
+	 */
+	private function reorderUrl($productId, $qty)
+	{
+		if (function_exists('isModEnabled') && isModEnabled('bulkpo')) {
+			$seed = base64_encode(json_encode(array(array('id' => (int) $productId, 'qty' => (float) $qty))));
+			return dol_buildpath('/bulkpo/bulkpo_wizard.php', 1).'?seed='.rawurlencode($seed);
+		}
+		return DOL_URL_ROOT.'/product/fournisseurs.php?id='.((int) $productId);
 	}
 
 	/**

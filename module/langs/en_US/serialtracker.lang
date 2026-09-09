@@ -77,6 +77,9 @@ SerialtrackerColAction = Action
 SerialtrackerCreateMO = Create MO ×%s
 SerialtrackerReorder = Reorder ×%s
 SerialtrackerCovered = Covered
+SerialtrackerOpenOrder = Open order
+SerialtrackerCreatePoSelected = Create PO from selected
+SerialtrackerPoSelectHint = Tick purchased-short lines for the same vendor, then group them into one PO
 
 # ATP settings
 SerialtrackerAtpDemandAll = Count draft orders as demand

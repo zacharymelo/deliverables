@@ -49,15 +49,23 @@ demand time window (days). Warehouse scope = all.
    raw shipment qty and do NOT net returns — a returned-not-yet-reshipped unit is
    overstated as delivered until returns netting is added here.
 
-2. **Purchase Order action → wire to DoliBulkPO.**
-   Today "Reorder" links to the product's supplier tab. The real tool is
-   **`DoliBulkPO`** (`bulkpo_wizard.php`), which builds a draft PO from a
-   client-side product+qty selection (`selected_products` JSON on
-   `action=create`). It has **no GET seed** yet to pre-stage specific
-   products/qty. Next: add a seed entry to BulkPO, then point "Reorder ×N" at it
-   pre-seeded with the shortfall product+qty (and the product's default vendor).
-   (`PO-From-MRP` / `modBompo` handles component POs for an MO's BOM — relevant
-   after Create MO.)
+## Dependencies (soft / runtime)
+
+- **DoliBulkPO** (module `bulkpo`) — *optional.* When installed:
+  - **Per-line Reorder** deep-links into the Bulk PO wizard pre-seeded with that
+    product + shortfall qty.
+  - **Multi-select → one PO:** each purchased-short line gets a checkbox; ticking
+    several and clicking **Create PO from selected (N)** seeds the wizard with all
+    of them at once. Vendor grouping is the employee's call — tick lines for the
+    same vendor; they pick the vendor in the wizard (which creates one PO).
+  - Both use `bulkpo_wizard.php?seed=<base64 JSON [{id,qty}]>`, which `bulkpo.js`
+    merges into its staging store.
+
+  When `bulkpo` is **not** enabled, the checkboxes/batch bar are hidden and
+  per-line Reorder **gracefully falls back** to the product's supplier tab
+  (`product/fournisseurs.php?id=`). Runtime check (`isModEnabled('bulkpo')`), NOT a
+  hard `$this->depends` — serialtracker installs and works without BulkPO. Requires
+  DoliBulkPO ≥ the version that added the `seed` param.
 
 ## Build / install
 
