@@ -266,11 +266,10 @@ class SerialLifecycleRenderer
 		}
 
 		$parts = array();
-		$parts[] = $langs->trans('SerialtrackerSummaryUnits', (int) $sum['units'], (int) $sum['lines']);
-		if ((int) $sum['shipped'] > 0)       { $parts[] = $langs->trans('SerialtrackerSummaryShipped', (int) $sum['shipped']); }
-		if ((int) $sum['picking'] > 0)       { $parts[] = $langs->trans('SerialtrackerSummaryPicking', (int) $sum['picking']); }
-		if ((int) $sum['in_warranty'] > 0)   { $parts[] = $langs->trans('SerialtrackerSummaryWarranty', (int) $sum['in_warranty']); }
-		if ((int) $sum['support_ended'] > 0) { $parts[] = $langs->trans('SerialtrackerSummaryEnded', (int) $sum['support_ended']); }
+		$parts[] = $langs->trans('SerialtrackerSummaryUnits', $this->fmt($sum['units']), (int) $sum['lines']);
+		$parts[] = $langs->trans('SerialtrackerSummaryShipped', $this->fmt($sum['shipped']));
+		if ((float) $sum['outstanding'] > 0) { $parts[] = $langs->trans('SerialtrackerSummaryOutstanding', $this->fmt($sum['outstanding'])); }
+		if ((float) $sum['short'] > 0)       { $parts[] = $langs->trans('SerialtrackerSummaryShort', $this->fmt($sum['short'])); }
 
 		$out  = '<div class="serialtracker-summary">';
 		$out .= '<span class="serialtracker-summary-label">'.dol_escape_htmltag($langs->trans('SerialtrackerTitle')).':</span> ';
@@ -282,6 +281,133 @@ class SerialLifecycleRenderer
 		}
 		$out .= '</div>';
 		return $out;
+	}
+
+	// -------------------------------------------------------------------------
+	// Deliverables + shortfall table (project / customer tabs)
+	// -------------------------------------------------------------------------
+
+	/**
+	 *  Render the deliverables table: per order line, fulfillment + ATP/shortfall.
+	 *
+	 *  @param  array  $rows  From SerialLifecycleResolver::resolveDeliverables()
+	 *  @return string
+	 */
+	public function renderDeliverables($rows)
+	{
+		global $langs;
+		$langs->loadLangs(array('serialtracker@serialtracker'));
+
+		if (empty($rows) || !is_array($rows)) {
+			return '';
+		}
+
+		$out = '<div class="serialtracker-panel">';
+		if ($this->isSample) {
+			$out .= '<div class="serialtracker-head"><span class="serialtracker-sample-tag">'
+				.dol_escape_htmltag($langs->trans('SerialtrackerSampleTag')).'</span></div>';
+		}
+
+		$out .= '<div class="serialtracker-tablewrap"><table class="serialtracker-deliverables">';
+		$out .= '<thead><tr>';
+		$out .= '<th>'.dol_escape_htmltag($langs->trans('SerialtrackerColProduct')).'</th>';
+		$out .= '<th class="c">'.dol_escape_htmltag($langs->trans('SerialtrackerColOrdered')).'</th>';
+		$out .= '<th class="c">'.dol_escape_htmltag($langs->trans('SerialtrackerColShipped')).'</th>';
+		$out .= '<th class="c">'.dol_escape_htmltag($langs->trans('SerialtrackerColOutstanding')).'</th>';
+		$out .= '<th>'.dol_escape_htmltag($langs->trans('SerialtrackerColSerials')).'</th>';
+		$out .= '<th class="c">'.dol_escape_htmltag($langs->trans('SerialtrackerColStock')).'</th>';
+		$out .= '<th class="c">'.dol_escape_htmltag($langs->trans('SerialtrackerColIncoming')).'</th>';
+		$out .= '<th class="c">'.dol_escape_htmltag($langs->trans('SerialtrackerColCommitted')).'</th>';
+		$out .= '<th class="c">'.dol_escape_htmltag($langs->trans('SerialtrackerColShort')).'</th>';
+		$out .= '<th>'.dol_escape_htmltag($langs->trans('SerialtrackerColAction')).'</th>';
+		$out .= '</tr></thead><tbody>';
+
+		foreach ($rows as $r) {
+			$out .= $this->renderDeliverableRow($r);
+		}
+
+		$out .= '</tbody></table></div></div>';
+		return $out;
+	}
+
+	/**
+	 *  One deliverables table row.
+	 *
+	 *  @param  array  $r
+	 *  @return string
+	 */
+	private function renderDeliverableRow($r)
+	{
+		global $langs;
+
+		$short   = isset($r['shortfall']) ? (float) $r['shortfall'] : 0;
+		$rowCls  = ($short > 0) ? ' class="serialtracker-short"' : '';
+
+		$out  = '<tr'.$rowCls.'>';
+		$out .= '<td>'.dol_escape_htmltag($r['product']);
+		if (!empty($r['order_ref'])) {
+			$out .= '<span class="serialtracker-rowmeta">'.dol_escape_htmltag($r['order_ref']).'</span>';
+		}
+		$out .= '</td>';
+		$out .= '<td class="c">'.$this->fmt($r['ordered']).'</td>';
+		$out .= '<td class="c">'.$this->fmt($r['shipped']).'</td>';
+		$out .= '<td class="c">'.($r['outstanding'] > 0 ? '<b>'.$this->fmt($r['outstanding']).'</b>' : '0').'</td>';
+
+		// Serials cell.
+		$out .= '<td>';
+		if (!empty($r['serials'])) {
+			foreach ($r['serials'] as $srl) {
+				$lotId  = (int) $srl['lot_id'];
+				$serial = dol_escape_htmltag($srl['serial']);
+				if ($lotId > 0) {
+					$u = dol_buildpath('/serialtracker/serial_card.php', 1).'?id='.$lotId;
+					$out .= '<a class="serialtracker-chip" href="'.dol_escape_htmltag($u).'">'.$serial.'</a> ';
+				} else {
+					$out .= '<span class="serialtracker-chip">'.$serial.'</span> ';
+				}
+			}
+		}
+		$out .= '</td>';
+
+		$out .= '<td class="c">'.$this->fmt($r['onhand']).'</td>';
+		$out .= '<td class="c">'.$this->fmt($r['incoming']).'</td>';
+		$out .= '<td class="c">'.$this->fmt($r['committed']).'</td>';
+		$out .= '<td class="c">'.($short > 0 ? '<b class="serialtracker-shortnum">'.$this->fmt($short).'</b>' : '0').'</td>';
+
+		// Action cell.
+		$out .= '<td>';
+		if ($short > 0) {
+			if (!empty($r['manufacturable']) && !empty($r['bom_id'])) {
+				$u = DOL_URL_ROOT.'/mrp/mo_card.php?action=create&fk_bom='.((int) $r['bom_id']).'&qty='.rawurlencode($this->fmt($short));
+				$out .= '<a class="serialtracker-act serialtracker-act-mo" href="'.dol_escape_htmltag($u).'">'
+					.dol_escape_htmltag($langs->trans('SerialtrackerCreateMO', $this->fmt($short))).'</a>';
+			} else {
+				$u = DOL_URL_ROOT.'/product/fournisseurs.php?id='.((int) $r['product_id']);
+				$out .= '<a class="serialtracker-act serialtracker-act-po" href="'.dol_escape_htmltag($u).'">'
+					.dol_escape_htmltag($langs->trans('SerialtrackerReorder', $this->fmt($short))).'</a>';
+			}
+		} else {
+			$out .= '<span class="serialtracker-ok" title="'.dol_escape_htmltag($langs->trans('SerialtrackerCovered')).'">&#10003;</span>';
+		}
+		$out .= '</td>';
+
+		$out .= '</tr>';
+		return $out;
+	}
+
+	/**
+	 *  Format a quantity: drop trailing zeros / decimals when whole.
+	 *
+	 *  @param  mixed  $n
+	 *  @return string
+	 */
+	private function fmt($n)
+	{
+		$n = (float) $n;
+		if ($n == (int) $n) {
+			return (string) (int) $n;
+		}
+		return rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.');
 	}
 
 	// -------------------------------------------------------------------------

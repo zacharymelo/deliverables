@@ -83,15 +83,14 @@ $cssurl = dol_buildpath('/serialtracker/css/serialtracker.css', 1);
 print '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($cssurl).'">'."\n";
 
 $resolver = new SerialLifecycleResolver($db);
-$lines    = $resolver->resolveForProject($object->id);
+$rows     = $resolver->resolveDeliverables(array('fk_project' => $object->id));
 
 $renderer = new SerialLifecycleRenderer();
-$renderer->isSample = $resolver->isSample;
 
-if (empty($lines)) {
+if (empty($rows)) {
 	print '<div class="opacitymedium">'.$langs->trans('SerialtrackerNoLines').'</div>';
 } else {
-	print $renderer->renderLines($lines);
+	print $renderer->renderDeliverables($rows);
 }
 
 print '</div>';

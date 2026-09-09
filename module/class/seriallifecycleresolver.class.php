@@ -147,27 +147,14 @@ class SerialLifecycleResolver
 	 */
 	public function summaryForProject($projectId)
 	{
-		$lines = $this->resolveForProject($projectId);
-		$sum = array('lines' => 0, 'units' => 0, 'picking' => 0, 'shipped' => 0, 'in_warranty' => 0, 'support_ended' => 0);
-		foreach ($lines as $l) {
-			// Collapsed "other parts" summary row carries its own counts.
-			if (!empty($l['is_summary'])) {
-				$sum['lines']   += (int) $l['lines'];
-				$sum['units']   += (int) $l['qty'];
-				$sum['shipped'] += (int) $l['shipped'];
-				continue;
-			}
+		$rows = $this->resolveDeliverables(array('fk_project' => (int) $projectId));
+		$sum = array('lines' => 0, 'units' => 0, 'shipped' => 0, 'outstanding' => 0, 'short' => 0);
+		foreach ($rows as $r) {
 			$sum['lines']++;
-			$sum['units']   += (int) $l['qty'];
-			$sum['picking'] += (int) $l['picking'];
-			$sum['shipped'] += (int) $l['shipped'];
-			foreach ((isset($l['serials']) ? $l['serials'] : array()) as $srl) {
-				if ($srl['stage'] === 'WARR') {
-					$sum['in_warranty']++;
-				} elseif ($srl['stage'] === 'EOL') {
-					$sum['support_ended']++;
-				}
-			}
+			$sum['units']       += (float) $r['ordered'];
+			$sum['shipped']     += (float) $r['shipped'];
+			$sum['outstanding'] += (float) $r['outstanding'];
+			$sum['short']       += isset($r['shortfall']) ? (float) $r['shortfall'] : 0;
 		}
 		return $sum;
 	}
@@ -421,6 +408,205 @@ class SerialLifecycleResolver
 			'order_ref'  => $orderRef,
 			'steps'      => $steps,
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Deliverables + ATP shortfall (native/stable tables only)
+	// -------------------------------------------------------------------------
+
+	/**
+	 *  Available-to-promise per product (company-wide), with shortfall.
+	 *
+	 *    on_hand   = SUM(product_stock.reel) across all warehouses
+	 *    incoming  = SUM(mrp_mo.qty) for in-progress MOs (status 2)
+	 *    committed = SUM per-line max(0, ordered - shipped) over open sales orders
+	 *                (status per SERIALTRACKER_ATP_DEMAND_ALL; within the time window)
+	 *    shortfall = max(0, committed - on_hand - incoming)
+	 *
+	 *  Action routing: a product with an active BOM is manufacturable (Create MO);
+	 *  otherwise it is purchased (reorder / PO).
+	 *
+	 *  @param  int[]  $productIds
+	 *  @return array  productId => [onhand, incoming, committed, shortfall, manufacturable, bom_id]
+	 */
+	public function atpForProducts($productIds)
+	{
+		$out = array();
+		$productIds = array_values(array_unique(array_filter(array_map('intval', $productIds))));
+		if (empty($productIds)) {
+			return $out;
+		}
+		$in = implode(',', $productIds);
+		foreach ($productIds as $pid) {
+			$out[$pid] = array('onhand' => 0, 'incoming' => 0, 'committed' => 0, 'shortfall' => 0, 'manufacturable' => false, 'bom_id' => 0);
+		}
+
+		// On-hand, all warehouses.
+		$r = $this->db->query("SELECT fk_product, SUM(reel) as onhand FROM ".MAIN_DB_PREFIX."product_stock WHERE fk_product IN (".$in.") GROUP BY fk_product");
+		if ($r) {
+			while ($o = $this->db->fetch_object($r)) {
+				$out[(int) $o->fk_product]['onhand'] = (float) $o->onhand;
+			}
+		}
+
+		// Incoming = in-progress MOs only (status 2).
+		$r = $this->db->query("SELECT fk_product, SUM(qty) as inc FROM ".MAIN_DB_PREFIX."mrp_mo WHERE fk_product IN (".$in.") AND status = 2 AND entity IN (".getEntity('mrp_mo').") GROUP BY fk_product");
+		if ($r) {
+			while ($o = $this->db->fetch_object($r)) {
+				$out[(int) $o->fk_product]['incoming'] = (float) $o->inc;
+			}
+		}
+
+		// Manufacturable = has an active BOM (status 1).
+		$r = $this->db->query("SELECT fk_product, MIN(rowid) as bom_id FROM ".MAIN_DB_PREFIX."bom_bom WHERE fk_product IN (".$in.") AND status = 1 AND entity IN (".getEntity('bom_bom').") GROUP BY fk_product");
+		if ($r) {
+			while ($o = $this->db->fetch_object($r)) {
+				$out[(int) $o->fk_product]['bom_id'] = (int) $o->bom_id;
+				$out[(int) $o->fk_product]['manufacturable'] = true;
+			}
+		}
+
+		// Committed = per-line outstanding across open orders (netted, windowed).
+		$statuses   = (getDolGlobalString('SERIALTRACKER_ATP_DEMAND_ALL', '0') === '1') ? '0,1,2' : '1,2';
+		$windowDays = (int) getDolGlobalInt('SERIALTRACKER_ATP_WINDOW_DAYS', 180);
+		$windowClause = '';
+		if ($windowDays > 0) {
+			$windowClause = " AND c.date_commande >= '".$this->db->idate(dol_now() - ($windowDays * 86400))."'";
+		}
+		$sql = "SELECT cd.fk_product, cd.qty as ordered,"
+			." COALESCE((SELECT SUM(ed.qty) FROM ".MAIN_DB_PREFIX."expeditiondet ed"
+			."  INNER JOIN ".MAIN_DB_PREFIX."expedition e2 ON e2.rowid = ed.fk_expedition AND e2.fk_statut >= 1"
+			."  WHERE ed.element_type = 'commande' AND ed.fk_elementdet = cd.rowid), 0) as shipped"
+			." FROM ".MAIN_DB_PREFIX."commandedet cd"
+			." INNER JOIN ".MAIN_DB_PREFIX."commande c ON c.rowid = cd.fk_commande"
+			." WHERE cd.fk_product IN (".$in.")"
+			." AND c.fk_statut IN (".$statuses.")"
+			." AND c.entity IN (".getEntity('commande').")"
+			.$windowClause;
+		$r = $this->db->query($sql);
+		if ($r) {
+			while ($o = $this->db->fetch_object($r)) {
+				$out[(int) $o->fk_product]['committed'] += max(0, (float) $o->ordered - (float) $o->shipped);
+			}
+		}
+
+		foreach ($out as $pid => $a) {
+			$out[$pid]['shortfall'] = max(0, $a['committed'] - $a['onhand'] - $a['incoming']);
+		}
+		return $out;
+	}
+
+	/**
+	 *  Deliverables for a project/customer: every order line with fulfillment
+	 *  counts, deduped serials, and the product's ATP/shortfall. Not collapsed.
+	 *
+	 *  @param  array  $filter  fk_project | fk_soc
+	 *  @return array
+	 */
+	public function resolveDeliverables($filter)
+	{
+		if (!empty($filter['fk_project'])) {
+			$where = "c.fk_projet = ".((int) $filter['fk_project']);
+		} elseif (!empty($filter['fk_soc'])) {
+			$where = "c.fk_soc = ".((int) $filter['fk_soc']);
+		} else {
+			return array();
+		}
+
+		$sql = "SELECT cd.rowid as line_id, cd.fk_product, cd.qty,"
+			." c.ref as order_ref,"
+			." p.ref as product_ref, p.label as product_label, COALESCE(p.tobatch, 0) as tobatch"
+			." FROM ".MAIN_DB_PREFIX."commandedet cd"
+			." INNER JOIN ".MAIN_DB_PREFIX."commande c ON c.rowid = cd.fk_commande"
+			." LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = cd.fk_product"
+			." WHERE ".$where." AND cd.fk_product > 0"
+			." AND c.entity IN (".getEntity('commande').")"
+			." ORDER BY c.rowid DESC, cd.rowid";
+		$res = $this->db->query($sql);
+		if (!$res) {
+			return array();
+		}
+		$rows = array();
+		$ids = array();
+		$pids = array();
+		while ($o = $this->db->fetch_object($res)) {
+			$id = (int) $o->line_id;
+			$rows[$id] = array(
+				'line_id'    => $id,
+				'product_id' => (int) $o->fk_product,
+				'product'    => ($o->product_label != '' ? $o->product_label : $o->product_ref),
+				'order_ref'  => $o->order_ref,
+				'ordered'    => (float) $o->qty,
+				'serialized' => ((int) $o->tobatch > 0),
+				'shipped'    => 0,
+				'serials'    => array(),
+			);
+			$ids[] = $id;
+			$pids[(int) $o->fk_product] = (int) $o->fk_product;
+		}
+		if (empty($ids)) {
+			return array();
+		}
+		$inIds = implode(',', $ids);
+
+		// This order's shipped qty per line (validated shipments).
+		$r2 = $this->db->query("SELECT ed.fk_elementdet as line_id, SUM(ed.qty) as shipped"
+			." FROM ".MAIN_DB_PREFIX."expeditiondet ed"
+			." INNER JOIN ".MAIN_DB_PREFIX."expedition e ON e.rowid = ed.fk_expedition AND e.fk_statut >= 1"
+			." WHERE ed.element_type = 'commande' AND ed.fk_elementdet IN (".$inIds.")"
+			." AND e.entity IN (".getEntity('expedition').")"
+			." GROUP BY ed.fk_elementdet");
+		if ($r2) {
+			while ($o = $this->db->fetch_object($r2)) {
+				if (isset($rows[(int) $o->line_id])) {
+					$rows[(int) $o->line_id]['shipped'] = (float) $o->shipped;
+				}
+			}
+		}
+
+		// Serials, deduped by batch (a returned+reshipped serial appears once).
+		$serIds = array();
+		foreach ($rows as $id => $r) {
+			if ($r['serialized']) {
+				$serIds[] = $id;
+			}
+		}
+		if (!empty($serIds)) {
+			$r3 = $this->db->query("SELECT ed.fk_elementdet as line_id, eb.batch, ed.fk_product, pl.rowid as lot_id"
+				." FROM ".MAIN_DB_PREFIX."expeditiondet ed"
+				." INNER JOIN ".MAIN_DB_PREFIX."expedition e ON e.rowid = ed.fk_expedition AND e.fk_statut >= 1"
+				." INNER JOIN ".MAIN_DB_PREFIX."expeditiondet_batch eb ON eb.fk_expeditiondet = ed.rowid"
+				." LEFT JOIN ".MAIN_DB_PREFIX."product_lot pl ON pl.batch = eb.batch AND pl.fk_product = ed.fk_product"
+				." WHERE ed.element_type = 'commande' AND ed.fk_elementdet IN (".implode(',', $serIds).")"
+				." AND e.entity IN (".getEntity('expedition').")"
+				." ORDER BY eb.batch");
+			if ($r3) {
+				$seen = array();
+				while ($o = $this->db->fetch_object($r3)) {
+					$k = ((int) $o->line_id).'|'.$o->batch;
+					if (isset($seen[$k])) {
+						continue;
+					}
+					$seen[$k] = 1;
+					if (isset($rows[(int) $o->line_id])) {
+						$rows[(int) $o->line_id]['serials'][] = array('lot_id' => (int) $o->lot_id, 'serial' => $o->batch);
+					}
+				}
+			}
+		}
+
+		$atp = $this->atpForProducts(array_values($pids));
+
+		$out = array();
+		foreach ($rows as $r) {
+			$shipped = min($r['shipped'], $r['ordered']); // clamp reship inflation for display
+			$r['shipped']     = $shipped;
+			$r['outstanding'] = max(0, $r['ordered'] - $shipped);
+			$a = isset($atp[$r['product_id']]) ? $atp[$r['product_id']]
+				: array('onhand' => 0, 'incoming' => 0, 'committed' => 0, 'shortfall' => 0, 'manufacturable' => false, 'bom_id' => 0);
+			$out[] = array_merge($r, $a);
+		}
+		return $out;
 	}
 
 	// -------------------------------------------------------------------------

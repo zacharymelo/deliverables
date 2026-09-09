@@ -65,6 +65,8 @@ if ($action == 'update') {
 	// below is sufficient) — no manual verification call is needed here.
 	dolibarr_set_const($db, 'SERIALTRACKER_SAMPLE', GETPOSTINT('SERIALTRACKER_SAMPLE') ? '1' : '0', 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'SERIALTRACKER_DEBUG',  GETPOSTINT('SERIALTRACKER_DEBUG')  ? '1' : '0', 'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'SERIALTRACKER_ATP_DEMAND_ALL', GETPOSTINT('SERIALTRACKER_ATP_DEMAND_ALL') ? '1' : '0', 'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'SERIALTRACKER_ATP_WINDOW_DAYS', (string) GETPOSTINT('SERIALTRACKER_ATP_WINDOW_DAYS'), 'chaine', 0, '', $conf->entity);
 	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
 	header('Location: '.$_SERVER['PHP_SELF']);
 	exit;
@@ -102,6 +104,20 @@ print '<tr class="oddeven">';
 print '<td><strong>'.$langs->trans('SerialtrackerDebugMode').'</strong><br>';
 print '<span class="opacitymedium">'.$langs->trans('SerialtrackerDebugModeHelp').'</span></td>';
 print '<td class="center">'.$form->selectyesno('SERIALTRACKER_DEBUG', getDolGlobalInt('SERIALTRACKER_DEBUG', 0), 1).'</td>';
+print '</tr>';
+
+// ATP: include draft orders in demand.
+print '<tr class="oddeven">';
+print '<td><strong>'.$langs->trans('SerialtrackerAtpDemandAll').'</strong><br>';
+print '<span class="opacitymedium">'.$langs->trans('SerialtrackerAtpDemandAllHelp').'</span></td>';
+print '<td class="center">'.$form->selectyesno('SERIALTRACKER_ATP_DEMAND_ALL', getDolGlobalInt('SERIALTRACKER_ATP_DEMAND_ALL', 0), 1).'</td>';
+print '</tr>';
+
+// ATP: demand time window (days).
+print '<tr class="oddeven">';
+print '<td><strong>'.$langs->trans('SerialtrackerAtpWindow').'</strong><br>';
+print '<span class="opacitymedium">'.$langs->trans('SerialtrackerAtpWindowHelp').'</span></td>';
+print '<td class="center"><input type="number" min="0" name="SERIALTRACKER_ATP_WINDOW_DAYS" value="'.dol_escape_htmltag((string) getDolGlobalInt('SERIALTRACKER_ATP_WINDOW_DAYS', 180)).'" class="width75"></td>';
 print '</tr>';
 
 print '</table>';

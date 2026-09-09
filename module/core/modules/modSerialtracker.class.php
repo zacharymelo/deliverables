@@ -61,7 +61,7 @@ class modSerialtracker extends DolibarrModules
 		$this->editor_name = 'Serial Tracker contributors';
 		$this->editor_url = '';
 
-		$this->version = '0.4.1';
+		$this->version = '0.5.0';
 
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 
@@ -110,6 +110,8 @@ class modSerialtracker extends DolibarrModules
 			// evidence resolution is in place.
 			array('SERIALTRACKER_SAMPLE', 'chaine', '1', 'Render sample serials for UX preview (1) or live data (0)', 0),
 			array('SERIALTRACKER_DEBUG',  'chaine', '0', 'Show debug output to admins only', 0),
+			array('SERIALTRACKER_ATP_DEMAND_ALL',  'chaine', '0',   'Include draft orders in ATP demand (1) or validated only (0)', 0),
+			array('SERIALTRACKER_ATP_WINDOW_DAYS', 'chaine', '180', 'ATP demand time window in days (0 = no limit)', 0),
 		);
 
 		$this->rights = array();

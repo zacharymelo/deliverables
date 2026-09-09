@@ -60,9 +60,29 @@ SerialtrackerWarrantyPending = Warranty integration pending
 # Slim summary line (project card)
 SerialtrackerSummaryUnits = %s units across %s lines
 SerialtrackerSummaryShipped = %s shipped
-SerialtrackerSummaryPicking = %s picking
-SerialtrackerSummaryWarranty = %s in warranty
-SerialtrackerSummaryEnded = %s support ended
+SerialtrackerSummaryOutstanding = %s outstanding
+SerialtrackerSummaryShort = %s short
+
+# Deliverables table
+SerialtrackerColProduct = Product
+SerialtrackerColOrdered = Ord
+SerialtrackerColShipped = Shipped
+SerialtrackerColOutstanding = Outstanding
+SerialtrackerColSerials = Serials
+SerialtrackerColStock = Stock
+SerialtrackerColIncoming = In prod
+SerialtrackerColCommitted = Committed
+SerialtrackerColShort = Short
+SerialtrackerColAction = Action
+SerialtrackerCreateMO = Create MO ×%s
+SerialtrackerReorder = Reorder ×%s
+SerialtrackerCovered = Covered
+
+# ATP settings
+SerialtrackerAtpDemandAll = Count draft orders as demand
+SerialtrackerAtpDemandAllHelp = When enabled, draft (unvalidated) sales orders also consume available stock when computing shortfall. Off = only validated / in-process orders count.
+SerialtrackerAtpWindow = Demand time window (days)
+SerialtrackerAtpWindowHelp = Only orders placed within this many days count toward demand, so old stale orders fall off. 0 = no limit.
 
 # Serial detail fields
 SerialtrackerFieldProduction = Production
