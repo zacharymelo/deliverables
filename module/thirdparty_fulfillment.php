@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 /**
  *  \file       thirdparty_fulfillment.php
- *  \ingroup    serialtracker
+ *  \ingroup    deliverables
  *  \brief      Customer tab: every order-line fulfillment journey for a company.
  */
 
@@ -44,17 +44,17 @@ if (!$res) {
 
 require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
-dol_include_once('/serialtracker/class/seriallifecycleresolver.class.php');
-dol_include_once('/serialtracker/class/seriallifecyclerenderer.class.php');
+dol_include_once('/deliverables/class/deliverablesresolver.class.php');
+dol_include_once('/deliverables/class/deliverablesrenderer.class.php');
 
-$langs->loadLangs(array('companies', 'serialtracker@serialtracker'));
+$langs->loadLangs(array('companies', 'deliverables@deliverables'));
 
 $id = GETPOSTINT('id');
 
-if (!isModEnabled('serialtracker')) {
+if (!isModEnabled('deliverables')) {
 	accessforbidden('Module not enabled');
 }
-if (!$user->hasRight('serialtracker', 'read')) {
+if (!$user->hasRight('deliverables', 'read')) {
 	accessforbidden();
 }
 
@@ -67,28 +67,28 @@ if (empty($object->id)) {
 }
 restrictedArea($user, 'societe', $object->id, '&societe');
 
-$title = $langs->trans('SerialtrackerTabTitle').' - '.$object->name;
+$title = $langs->trans('DeliverablesTabTitle').' - '.$object->name;
 llxHeader('', $title);
 
 $head = societe_prepare_head($object);
-print dol_get_fiche_head($head, 'serialtracker', $langs->trans('ThirdParty'), -1, 'company');
+print dol_get_fiche_head($head, 'deliverables', $langs->trans('ThirdParty'), -1, 'company');
 
 $linkback = '<a href="'.DOL_URL_ROOT.'/societe/list.php?restore_lastsearch_values=1">'.$langs->trans("BackToList").'</a>';
 dol_banner_tab($object, 'ref', $linkback, 1, 'rowid', 'nom');
 
 print '<div class="fichecenter">';
 
-$cssfile = dol_buildpath('/serialtracker/css/serialtracker.css', 0);
-$cssurl  = dol_buildpath('/serialtracker/css/serialtracker.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
+$cssfile = dol_buildpath('/deliverables/css/deliverables.css', 0);
+$cssurl  = dol_buildpath('/deliverables/css/deliverables.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
 print '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($cssurl).'">'."\n";
 
-$resolver = new SerialLifecycleResolver($db);
+$resolver = new DeliverablesResolver($db);
 $rows     = $resolver->resolveDeliverables(array('fk_soc' => $object->id));
 
-$renderer = new SerialLifecycleRenderer();
+$renderer = new DeliverablesRenderer();
 
 if (empty($rows)) {
-	print '<div class="opacitymedium">'.$langs->trans('SerialtrackerNoLines').'</div>';
+	print '<div class="opacitymedium">'.$langs->trans('DeliverablesNoLines').'</div>';
 } else {
 	print $renderer->renderDeliverables($rows);
 }

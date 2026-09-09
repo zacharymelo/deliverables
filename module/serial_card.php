@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 /**
  *  \file       serial_card.php
- *  \ingroup    serialtracker
+ *  \ingroup    deliverables
  *  \brief      Per-serial detail: back-half journey + MO/production trace by lot.
  */
 
@@ -42,32 +42,32 @@ if (!$res) {
 	die("Include of main fails");
 }
 
-dol_include_once('/serialtracker/class/seriallifecycleresolver.class.php');
-dol_include_once('/serialtracker/class/seriallifecyclerenderer.class.php');
+dol_include_once('/deliverables/class/deliverablesresolver.class.php');
+dol_include_once('/deliverables/class/deliverablesrenderer.class.php');
 
-$langs->loadLangs(array('serialtracker@serialtracker'));
+$langs->loadLangs(array('deliverables@deliverables'));
 
 $id = GETPOSTINT('id'); // product_lot rowid
 
-if (!isModEnabled('serialtracker')) {
+if (!isModEnabled('deliverables')) {
 	accessforbidden('Module not enabled');
 }
-if (!$user->hasRight('serialtracker', 'read')) {
+if (!$user->hasRight('deliverables', 'read')) {
 	accessforbidden();
 }
 
-$resolver = new SerialLifecycleResolver($db);
+$resolver = new DeliverablesResolver($db);
 $serial   = $resolver->resolveSerial($id);
 
 if (empty($serial)) {
 	accessforbidden('Serial not found');
 }
 
-$title = $langs->trans('SerialtrackerSerialTitle').' - '.$serial['serial'];
+$title = $langs->trans('DeliverablesSerialTitle').' - '.$serial['serial'];
 llxHeader('', $title);
 
-$cssfile = dol_buildpath('/serialtracker/css/serialtracker.css', 0);
-$cssurl  = dol_buildpath('/serialtracker/css/serialtracker.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
+$cssfile = dol_buildpath('/deliverables/css/deliverables.css', 0);
+$cssurl  = dol_buildpath('/deliverables/css/deliverables.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
 print '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($cssurl).'">'."\n";
 
 // Header line: serial ref + product.
@@ -75,9 +75,9 @@ $head = dol_escape_htmltag($serial['serial']);
 if (!empty($serial['product'])) {
 	$head .= ' <span class="opacitymedium">'.dol_escape_htmltag($serial['product']).'</span>';
 }
-print load_fiche_titre($langs->trans('SerialtrackerSerialTitle').' '.$head, '', 'barcode');
+print load_fiche_titre($langs->trans('DeliverablesSerialTitle').' '.$head, '', 'barcode');
 
-$renderer = new SerialLifecycleRenderer();
+$renderer = new DeliverablesRenderer();
 print $renderer->renderSerialDetail($serial);
 
 llxFooter();

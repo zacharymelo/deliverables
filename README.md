@@ -1,4 +1,4 @@
-# Serial Tracker
+# Deliverables
 
 An internal **fulfillment + install-base hub** for Dolibarr, anchored on the
 **order line**. Installs alongside Lead Tracker (numero `500122`). All data is
@@ -24,12 +24,12 @@ An internal **fulfillment + install-base hub** for Dolibarr, anchored on the
 on_hand   = Σ product_stock.reel  (all warehouses)
 incoming  = Σ mrp_mo.qty          (in-progress MOs, status = 2)
 committed = Σ per-line max(0, ordered − shipped) over open sales orders
-            (validated by default; within SERIALTRACKER_ATP_WINDOW_DAYS)
+            (validated by default; within DELIVERABLES_ATP_WINDOW_DAYS)
 shortfall = max(0, committed − on_hand − incoming)
 ```
 Manufactured (active `bom_bom`) → Create MO; else → Reorder (PO).
 
-Settings (Home → Setup → Serial Tracker): debug, "count draft orders as demand",
+Settings (Home → Setup → Deliverables): debug, "count draft orders as demand",
 demand time window (days). Warehouse scope = all.
 
 ## Verified linkage (llxiw_ prefix on staging)
@@ -45,7 +45,7 @@ demand time window (days). Warehouse scope = all.
 ## ⚠️ PENDING INTEGRATION — pick up here next pass
 
 1. **Returns / warranty (module being overhauled).**
-   `class/serialwarrantyadapter.class.php::forSerial()` returns `null` (deferred)
+   `class/warrantyadapter.class.php::forSerial()` returns `null` (deferred)
    — the back-half **Under Warranty / Support Ended** steps show "integration
    pending". Nothing else touches `llxiw_svc_warranty` / `llxiw_customer_return*`.
    When the returns/warranty overhaul lands, implement that one method (known
@@ -68,7 +68,7 @@ demand time window (days). Warehouse scope = all.
   When `bulkpo` is **not** enabled, the checkboxes/batch bar are hidden and
   per-line Reorder **gracefully falls back** to the product's supplier tab
   (`product/fournisseurs.php?id=`). Runtime check (`isModEnabled('bulkpo')`), NOT a
-  hard `$this->depends` — serialtracker installs and works without BulkPO. Requires
+  hard `$this->depends` — deliverables installs and works without BulkPO. Requires
   DoliBulkPO ≥ the version that added the `seed` param.
 
 ## Build / install

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build script for Serial Tracker module.
+Build script for Deliverables module.
 Usage: python3 bin/build.py <version>
   e.g. python3 bin/build.py 0.1.0
 
@@ -18,7 +18,7 @@ MODULE = ROOT / 'module'
 BIN = ROOT / 'bin'
 
 VERSION_FILES = {
-    MODULE / 'core' / 'modules' / 'modSerialtracker.class.php':
+    MODULE / 'core' / 'modules' / 'modDeliverables.class.php':
         (r"(\$this->version\s*=\s*')[^']+(')", r'\g<1>{version}\g<2>'),
 }
 
@@ -47,13 +47,13 @@ def verify_versions(version):
 
 
 def build_zip(version):
-    out = BIN / f'module_serialtracker-{version}.zip'
+    out = BIN / f'module_deliverables-{version}.zip'
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as zf:
         for f in sorted(MODULE.rglob('*')):
             if f.is_file():
-                zf.write(f, 'serialtracker/' + str(f.relative_to(MODULE)))
+                zf.write(f, 'deliverables/' + str(f.relative_to(MODULE)))
     with zipfile.ZipFile(out) as zf:
-        content = zf.read('serialtracker/core/modules/modSerialtracker.class.php').decode()
+        content = zf.read('deliverables/core/modules/modDeliverables.class.php').decode()
         if f"'{version}'" not in content:
             print(f'  ERROR: {version} not in zip')
             return None

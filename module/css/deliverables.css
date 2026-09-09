@@ -1,0 +1,305 @@
+/* Deliverables styles (prototype) — fulfillment journey.
+ *
+ * Panels: order-line list (project/customer tabs), per-serial detail, and a slim
+ * summary line for the project main card. Colors mirror Order Progress so the
+ * widgets read as a family.
+ */
+
+.deliverables-panel {
+	--deliverables-complete: #2e7d32; /* green */
+	--deliverables-current:  #1976d2; /* blue  */
+	--deliverables-pending:  #bdbdbd; /* grey  */
+	--deliverables-ended:    #607d8b; /* slate */
+	--deliverables-line:     #d0d0d0;
+
+	width: 100%;
+	box-sizing: border-box;
+	margin: 8px 0 16px 0;
+	padding: 6px 12px 10px;
+	background: var(--colorbacktitle1, #fbfbfb);
+	border: 1px solid var(--colorblockborder, #e0e0e0);
+	border-radius: 6px;
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.deliverables-head { margin: 6px 0 2px 2px; }
+.deliverables-sample-tag {
+	display: inline-block;
+	padding: 1px 7px;
+	border-radius: 9px;
+	font-size: 10px;
+	font-weight: bold;
+	text-transform: uppercase;
+	background: #fff3e0;
+	color: #e65100;
+	border: 1px solid #ffcc80;
+}
+
+/* --- Order-line row: identity + journey body --- */
+.deliverables-line {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	padding: 12px 4px;
+	border-top: 1px solid #ececec;
+}
+.deliverables-line:first-of-type { border-top: none; }
+
+.deliverables-ident {
+	flex: 0 0 190px;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	padding-top: 2px;
+}
+.deliverables-product {
+	font-weight: bold;
+	color: #222;
+	overflow-wrap: break-word;
+}
+.deliverables-linemeta {
+	color: #888;
+	font-size: 11px;
+	margin-top: 2px;
+	overflow-wrap: break-word;
+}
+
+.deliverables-linebody {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* --- Horizontal stepper --- */
+.deliverables-track {
+	display: flex;
+	align-items: flex-start;
+}
+.deliverables-step {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1 1 0;
+	min-width: 60px;
+	text-align: center;
+	padding: 0 2px;
+	cursor: default;
+}
+.deliverables-connector {
+	position: absolute;
+	top: 11px;
+	right: 50%;
+	width: 100%;
+	height: 3px;
+	background: var(--deliverables-line);
+	border-radius: 2px;
+	z-index: 0;
+}
+.deliverables-connector-complete { background: var(--deliverables-complete); }
+
+.deliverables-circle {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #ffffff;
+	border: 3px solid var(--deliverables-pending);
+	color: #ffffff;
+	font-size: 11px;
+	font-weight: bold;
+	box-sizing: border-box;
+}
+.deliverables-glyph { line-height: 1; }
+
+.deliverables-label {
+	display: block;
+	margin-top: 5px;
+	color: var(--colortexttitlenotab, #555);
+	max-width: 100px;
+	font-size: 11px;
+	overflow-wrap: break-word;
+}
+/* Subtitle line under the label (mirrors orderprogress-ref). */
+.deliverables-sub {
+	display: block;
+	margin-top: 2px;
+	color: #999;
+	font-size: 10px;
+	font-family: monospace;
+	overflow-wrap: break-word;
+}
+
+/* State styling */
+.deliverables-complete .deliverables-circle { background: var(--deliverables-complete); border-color: var(--deliverables-complete); }
+.deliverables-current .deliverables-circle { background: var(--deliverables-current); border-color: var(--deliverables-current); box-shadow: 0 0 0 3px rgba(25,118,210,0.25); }
+.deliverables-current .deliverables-label { font-weight: bold; }
+.deliverables-pending .deliverables-circle { background: #fff; border-color: var(--deliverables-pending); color: var(--deliverables-pending); }
+.deliverables-ended .deliverables-circle { background: var(--deliverables-ended); border-color: var(--deliverables-ended); }
+.deliverables-ended .deliverables-label { color: var(--deliverables-ended); font-weight: bold; }
+
+/* --- Serial chips (assigned serials on a line) --- */
+.deliverables-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 10px;
+	padding-left: 2px;
+}
+.deliverables-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 9px;
+	border-radius: 12px;
+	font-family: monospace;
+	font-size: 11px;
+	text-decoration: none;
+	color: #333;
+	background: #f0f1f3;
+	border: 1px solid #dcdfe3;
+}
+.deliverables-chip:hover { background: #e6e9ee; text-decoration: none; }
+.deliverables-chip-dot {
+	width: 8px; height: 8px; border-radius: 50%;
+	background: var(--deliverables-pending);
+	flex: 0 0 auto;
+}
+.deliverables-chip-warr .deliverables-chip-dot { background: var(--deliverables-current); }
+.deliverables-chip-ship .deliverables-chip-dot { background: var(--deliverables-complete); }
+.deliverables-chip-mfg  .deliverables-chip-dot { background: var(--deliverables-complete); }
+.deliverables-chip-eol  .deliverables-chip-dot { background: var(--deliverables-ended); }
+
+/* --- Deliverables + shortfall table --- */
+.deliverables-tablewrap { width: 100%; overflow-x: auto; }
+.deliverables-deliverables {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+	min-width: 760px;
+}
+.deliverables-deliverables th {
+	text-align: left;
+	padding: 6px 8px;
+	border-bottom: 2px solid #dfe3e8;
+	color: #667;
+	font-weight: bold;
+	white-space: nowrap;
+}
+.deliverables-deliverables td {
+	padding: 6px 8px;
+	border-bottom: 1px solid #eef0f2;
+	vertical-align: top;
+}
+.deliverables-deliverables th.c, .deliverables-deliverables td.c { text-align: center; }
+.deliverables-rowmeta { display: block; color: #999; font-size: 10px; font-family: monospace; }
+a.deliverables-orderlink { color: #1976d2; text-decoration: none; }
+a.deliverables-orderlink:hover { text-decoration: underline; }
+a.deliverables-prodlink { text-decoration: none; opacity: 0.65; }
+a.deliverables-prodlink:hover { opacity: 1; }
+.deliverables-deliverables thead th { background: #f4f6f9; }
+.deliverables-deliverables tbody tr:nth-child(even) { background: #fafbfc; }
+.deliverables-deliverables tbody tr:hover { background: #eef4fb; }
+.deliverables-deliverables td.c { font-variant-numeric: tabular-nums; }
+.deliverables-deliverables tr.deliverables-short { background: #fff6ec; }
+.deliverables-deliverables tr.deliverables-short:hover { background: #fdeede; }
+.deliverables-shortnum { color: #c0392b; }
+
+/* Action buttons */
+.deliverables-act {
+	display: inline-block;
+	padding: 2px 9px;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: bold;
+	text-decoration: none;
+	white-space: nowrap;
+}
+.deliverables-act-mo { background: #1976d2; color: #fff; }
+.deliverables-act-mo:hover { background: #145ca4; color: #fff; text-decoration: none; }
+.deliverables-act-po { background: #ef8c00; color: #fff; }
+.deliverables-act-po:hover { background: #cf7600; color: #fff; text-decoration: none; }
+.deliverables-ok { color: #2e7d32; font-weight: bold; }
+
+/* Reorder sourcing sublines (best price / faster vendor) */
+.deliverables-src { display: block; margin-top: 3px; font-size: 10px; color: #888; }
+a.deliverables-src-fast { color: #1976d2; text-decoration: none; }
+a.deliverables-src-fast:hover { text-decoration: underline; }
+.deliverables-src-none { color: #b26a00; font-style: italic; }
+.deliverables-po-pick { cursor: pointer; margin-right: 2px; }
+.deliverables-po-check { vertical-align: middle; }
+
+/* Multi-select → one-PO batch bar */
+.deliverables-pobar {
+	margin-top: 10px;
+	padding: 8px 12px;
+	background: #fff5ea;
+	border: 1px solid #ffcc80;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+.deliverables-pobar-hint { color: #8a6d3b; font-size: 11px; }
+
+/* Serial chip inside the table */
+.deliverables-deliverables .deliverables-chip {
+	display: inline-block;
+	margin: 0 3px 3px 0;
+	padding: 1px 7px;
+	border-radius: 10px;
+	font-family: monospace;
+	font-size: 10px;
+	background: #eef1f4;
+	border: 1px solid #dcdfe3;
+	color: #333;
+	text-decoration: none;
+}
+
+/* --- Collapsed "other parts" row --- */
+.deliverables-otherline { align-items: center; }
+.deliverables-otherlabel { font-weight: bold; color: #6b7280; }
+.deliverables-othermeta { color: #888; font-size: 11px; }
+
+/* --- Slim summary line (project main card): a distinct "well" --- */
+.deliverables-summary {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px 8px;
+	width: 100%;
+	box-sizing: border-box;
+	margin: 10px 0 14px 0;
+	padding: 9px 14px;
+	background: #f5f7fa;
+	border: 1px solid var(--colorblockborder, #dfe3e8);
+	border-left: 3px solid #1976d2;
+	border-radius: 6px;
+	box-shadow: inset 0 1px 2px rgba(0,0,0,0.045);
+	font-size: 12px;
+}
+.deliverables-summary-label { font-weight: bold; text-transform: uppercase; letter-spacing: 0.03em; color: #555; }
+.deliverables-summary-link { margin-left: auto; white-space: nowrap; font-weight: bold; }
+
+/* --- Serial detail page --- */
+.deliverables-detail { max-width: 720px; }
+.deliverables-detailtrack { padding: 10px 0 4px; }
+.deliverables-detailtable {
+	width: 100%;
+	margin-top: 12px;
+	border-collapse: collapse;
+}
+.deliverables-detailtable td { padding: 5px 8px; border-top: 1px solid #ececec; }
+.deliverables-dt-key { color: #888; width: 140px; }
+
+/* --- Narrow screens --- */
+@media (max-width: 767px) {
+	.deliverables-line { flex-direction: column; gap: 8px; }
+	.deliverables-ident { flex-basis: auto; }
+	.deliverables-summary-link { display: inline-block; margin-left: 0; margin-top: 4px; }
+}

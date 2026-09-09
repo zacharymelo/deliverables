@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,12 +16,12 @@
  */
 
 /**
- *  \file       class/serialwarrantyadapter.class.php
- *  \ingroup    serialtracker
+ *  \file       class/warrantyadapter.class.php
+ *  \ingroup    deliverables
  *  \brief      Isolation layer for warranty / returns / support-ended resolution.
  *
  *  DELIBERATELY the ONLY place that knows about the warranty & returns tables.
- *  Those modules are being overhauled, so nothing else in serialtracker couples
+ *  Those modules are being overhauled, so nothing else in deliverables couples
  *  to their schema. forSerial() returns null ("deferred") until the overhaul
  *  settles; then implement it here and the whole back-half lights up — no other
  *  file changes.
@@ -43,7 +43,7 @@
  *    )
  *  or null when there is no warranty record / resolution is deferred.
  */
-class SerialWarrantyAdapter
+class WarrantyAdapter
 {
 	/**
 	 *  Resolve warranty/support state for one serial. Deferred for now.

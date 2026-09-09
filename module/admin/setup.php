@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 /**
  *  \file       admin/setup.php
- *  \ingroup    serialtracker
+ *  \ingroup    deliverables
  *  \brief      Admin settings page: sample mode + debug toggle.
  */
 
@@ -48,7 +48,7 @@ if (!$res) {
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 
-$langs->loadLangs(array('admin', 'serialtracker@serialtracker'));
+$langs->loadLangs(array('admin', 'deliverables@deliverables'));
 
 if (!$user->admin) {
 	accessforbidden();
@@ -63,9 +63,9 @@ $form   = new Form($db);
 if ($action == 'update') {
 	// CSRF is validated automatically by main.inc.php (the hidden 'token' field
 	// below is sufficient) — no manual verification call is needed here.
-	dolibarr_set_const($db, 'SERIALTRACKER_DEBUG',  GETPOSTINT('SERIALTRACKER_DEBUG')  ? '1' : '0', 'chaine', 0, '', $conf->entity);
-	dolibarr_set_const($db, 'SERIALTRACKER_ATP_DEMAND_ALL', GETPOSTINT('SERIALTRACKER_ATP_DEMAND_ALL') ? '1' : '0', 'chaine', 0, '', $conf->entity);
-	dolibarr_set_const($db, 'SERIALTRACKER_ATP_WINDOW_DAYS', (string) GETPOSTINT('SERIALTRACKER_ATP_WINDOW_DAYS'), 'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'DELIVERABLES_DEBUG',  GETPOSTINT('DELIVERABLES_DEBUG')  ? '1' : '0', 'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'DELIVERABLES_ATP_DEMAND_ALL', GETPOSTINT('DELIVERABLES_ATP_DEMAND_ALL') ? '1' : '0', 'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'DELIVERABLES_ATP_WINDOW_DAYS', (string) GETPOSTINT('DELIVERABLES_ATP_WINDOW_DAYS'), 'chaine', 0, '', $conf->entity);
 	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
 	header('Location: '.$_SERVER['PHP_SELF']);
 	exit;
@@ -74,12 +74,12 @@ if ($action == 'update') {
 // -------------------------------------------------------------------------
 // View
 // -------------------------------------------------------------------------
-llxHeader('', $langs->trans('SerialtrackerSetup'));
+llxHeader('', $langs->trans('DeliverablesSetup'));
 
 $linkback = '<a href="'.DOL_URL_ROOT.'/admin/modules.php?restore_lastsearch_values=1">'.$langs->trans("BackToModuleList").'</a>';
-print load_fiche_titre($langs->trans('SerialtrackerSetup'), $linkback, 'title_setup');
+print load_fiche_titre($langs->trans('DeliverablesSetup'), $linkback, 'title_setup');
 
-print '<span class="opacitymedium">'.$langs->trans('SerialtrackerSetupIntro').'</span><br><br>';
+print '<span class="opacitymedium">'.$langs->trans('DeliverablesSetupIntro').'</span><br><br>';
 
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.newToken().'">';
@@ -93,23 +93,23 @@ print '</tr>';
 
 // Debug mode
 print '<tr class="oddeven">';
-print '<td><strong>'.$langs->trans('SerialtrackerDebugMode').'</strong><br>';
-print '<span class="opacitymedium">'.$langs->trans('SerialtrackerDebugModeHelp').'</span></td>';
-print '<td class="center">'.$form->selectyesno('SERIALTRACKER_DEBUG', getDolGlobalInt('SERIALTRACKER_DEBUG', 0), 1).'</td>';
+print '<td><strong>'.$langs->trans('DeliverablesDebugMode').'</strong><br>';
+print '<span class="opacitymedium">'.$langs->trans('DeliverablesDebugModeHelp').'</span></td>';
+print '<td class="center">'.$form->selectyesno('DELIVERABLES_DEBUG', getDolGlobalInt('DELIVERABLES_DEBUG', 0), 1).'</td>';
 print '</tr>';
 
 // ATP: include draft orders in demand.
 print '<tr class="oddeven">';
-print '<td><strong>'.$langs->trans('SerialtrackerAtpDemandAll').'</strong><br>';
-print '<span class="opacitymedium">'.$langs->trans('SerialtrackerAtpDemandAllHelp').'</span></td>';
-print '<td class="center">'.$form->selectyesno('SERIALTRACKER_ATP_DEMAND_ALL', getDolGlobalInt('SERIALTRACKER_ATP_DEMAND_ALL', 0), 1).'</td>';
+print '<td><strong>'.$langs->trans('DeliverablesAtpDemandAll').'</strong><br>';
+print '<span class="opacitymedium">'.$langs->trans('DeliverablesAtpDemandAllHelp').'</span></td>';
+print '<td class="center">'.$form->selectyesno('DELIVERABLES_ATP_DEMAND_ALL', getDolGlobalInt('DELIVERABLES_ATP_DEMAND_ALL', 0), 1).'</td>';
 print '</tr>';
 
 // ATP: demand time window (days).
 print '<tr class="oddeven">';
-print '<td><strong>'.$langs->trans('SerialtrackerAtpWindow').'</strong><br>';
-print '<span class="opacitymedium">'.$langs->trans('SerialtrackerAtpWindowHelp').'</span></td>';
-print '<td class="center"><input type="number" min="0" name="SERIALTRACKER_ATP_WINDOW_DAYS" value="'.dol_escape_htmltag((string) getDolGlobalInt('SERIALTRACKER_ATP_WINDOW_DAYS', 180)).'" class="width75"></td>';
+print '<td><strong>'.$langs->trans('DeliverablesAtpWindow').'</strong><br>';
+print '<span class="opacitymedium">'.$langs->trans('DeliverablesAtpWindowHelp').'</span></td>';
+print '<td class="center"><input type="number" min="0" name="DELIVERABLES_ATP_WINDOW_DAYS" value="'.dol_escape_htmltag((string) getDolGlobalInt('DELIVERABLES_ATP_WINDOW_DAYS', 180)).'" class="width75"></td>';
 print '</tr>';
 
 print '</table>';
@@ -121,9 +121,9 @@ print '</div>';
 print '</form>';
 
 // When debug is on, surface the discovery endpoint link for admins.
-if (getDolGlobalString('SERIALTRACKER_DEBUG')) {
-	$dbgurl = dol_buildpath('/serialtracker/ajax/debug.php', 1).'?project_id=';
-	print '<br><div class="info">'.$langs->trans('SerialtrackerDebugHint', dol_escape_htmltag($dbgurl.'N')).'</div>';
+if (getDolGlobalString('DELIVERABLES_DEBUG')) {
+	$dbgurl = dol_buildpath('/deliverables/ajax/debug.php', 1).'?project_id=';
+	print '<br><div class="info">'.$langs->trans('DeliverablesDebugHint', dol_escape_htmltag($dbgurl.'N')).'</div>';
 }
 
 llxFooter();

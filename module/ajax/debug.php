@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 
 /**
  *  \file       ajax/debug.php
- *  \ingroup    serialtracker
- *  \brief      Discovery endpoint. Admin-only, gated by SERIALTRACKER_DEBUG.
+ *  \ingroup    deliverables
+ *  \brief      Discovery endpoint. Admin-only, gated by DELIVERABLES_DEBUG.
  *
  *  Purpose: map the REAL linkage from a project to its serials and lifecycle
  *  evidence BEFORE any of it is trusted for display. Every query is defensive —
@@ -54,13 +54,13 @@ if (!$res) {
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (!$user->admin || !getDolGlobalString('SERIALTRACKER_DEBUG')) {
+if (!$user->admin || !getDolGlobalString('DELIVERABLES_DEBUG')) {
 	http_response_code(403);
 	print json_encode(array('error' => 'Forbidden'));
 	exit;
 }
 
-if (!isModEnabled('serialtracker')) {
+if (!isModEnabled('deliverables')) {
 	http_response_code(503);
 	print json_encode(array('error' => 'Module not enabled'));
 	exit;

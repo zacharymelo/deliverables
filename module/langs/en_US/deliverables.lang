@@ -1,0 +1,110 @@
+# Deliverables — English
+# Copyright (C) 2026 Deliverables contributors
+
+# Module
+Module500122Name = Deliverables
+Module500122Desc = Order-fulfillment / thing's-journey tracker (project + customer tabs, per-serial detail).
+
+# Tabs / titles
+DeliverablesTabTitle = Fulfillment
+DeliverablesTitle = Fulfillment
+DeliverablesSerialTitle = Serial
+DeliverablesSampleTag = Sample data
+DeliverablesViewAll = View all
+DeliverablesNoLines = No order lines to track yet.
+
+# Front-half stages (per order line)
+DeliverablesStageOrdered = Ordered
+DeliverablesStagePicking = Picking
+DeliverablesStageShipped = Shipped
+DeliverablesTodoOrdered = Order
+DeliverablesTodoPicking = Pick / assign
+DeliverablesTodoShipped = Ship
+
+# Back-half stages (per serial)
+DeliverablesStageManufactured = Manufactured
+DeliverablesStageWarranty = Under Warranty
+DeliverablesStageSupportEnded = Support Ended
+DeliverablesTodoManufactured = Manufacture
+DeliverablesTodoWarranty = Register warranty
+DeliverablesTodoSupportEnded = Support active
+
+# "What's still needed" hints (open steps)
+DeliverablesHintOrdered = Order line recorded
+DeliverablesHintPicking = Units being assigned to a shipment
+DeliverablesHintShipped = Awaiting shipment
+DeliverablesHintManufactured = Awaiting manufacture
+DeliverablesHintWarranty = Warranty not yet registered
+DeliverablesHintSupportEnded = Support ongoing
+
+# Status labels (tooltips)
+DeliverablesStatusProduced = Produced
+DeliverablesStatusShipped = Shipped
+DeliverablesStatusAwaitingShip = Awaiting shipment
+DeliverablesStatusWarrantyActive = Warranty active
+DeliverablesStatusWarrantyExpired = Warranty expired
+DeliverablesStatusSupportEnded = Support ended
+
+# Counts
+DeliverablesCountOf = %s of %s
+DeliverablesCountOfShort = %s ordered
+DeliverablesQtyUnits = %s units
+
+# Collapsed non-serialized parts summary row
+DeliverablesOtherLines = + %s other lines
+DeliverablesOtherShipped = %s of %s units shipped
+
+# Back-half deferred (warranty module overhaul in progress)
+DeliverablesWarrantyPending = Warranty integration pending
+
+# Slim summary line (project card)
+DeliverablesSummaryUnits = %s units across %s lines
+DeliverablesSummaryShipped = %s shipped
+DeliverablesSummaryOutstanding = %s outstanding
+DeliverablesSummaryShort = %s short
+
+# Deliverables table
+DeliverablesColProduct = Product
+DeliverablesColOrdered = Ord
+DeliverablesColShipped = Shipped
+DeliverablesColOutstanding = Outstanding
+DeliverablesColSerials = Serials
+DeliverablesColStock = Stock
+DeliverablesColIncoming = In prod
+DeliverablesColCommitted = Committed
+DeliverablesColShort = Short
+DeliverablesColAction = Action
+DeliverablesCreateMO = Create MO ×%s
+DeliverablesReorder = Reorder ×%s
+DeliverablesCovered = Covered
+DeliverablesOpenOrder = Open order
+DeliverablesOpenProduct = Open product
+DeliverablesSrcBest = best price
+DeliverablesSrcFaster = faster
+DeliverablesSrcNoVendor = no supplier price — pick vendor
+DeliverablesCreatePoSelected = Create PO from selected
+DeliverablesPoSelectHint = Tick purchased-short lines for the same vendor, then group them into one PO
+
+# ATP settings
+DeliverablesAtpDemandAll = Count draft orders as demand
+DeliverablesAtpDemandAllHelp = When enabled, draft (unvalidated) sales orders also consume available stock when computing shortfall. Off = only validated / in-process orders count.
+DeliverablesAtpWindow = Demand time window (days)
+DeliverablesAtpWindowHelp = Only orders placed within this many days count toward demand, so old stale orders fall off. 0 = no limit.
+
+# Serial detail fields
+DeliverablesFieldProduction = Production
+DeliverablesFieldOrder = Order
+DeliverablesFieldProject = Project
+DeliverablesFieldThirdparty = Customer
+
+# Settings
+DeliverablesSetup = Deliverables setup
+DeliverablesSetupIntro = Prototype settings. Sample mode shows mock data for UX review; turn it off once live resolution is wired. Debug enables the admin-only discovery endpoint.
+DeliverablesSampleMode = Sample data mode
+DeliverablesSampleModeHelp = When enabled, every surface shows a coherent mock dataset (tagged "Sample data") instead of live order/shipment data. Turn off once live resolution is in place.
+DeliverablesDebugMode = Debug mode
+DeliverablesDebugModeHelp = When enabled, admins can call the discovery endpoint (ajax/debug.php) used to map the order to shipment to lot linkage.
+DeliverablesDebugHint = Debug is on. Discovery endpoint: %s (admin only).
+
+# Permissions
+Permission50012201 = See the fulfillment / serial tracker

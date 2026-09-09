@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
  */
 
 /**
- *  \file       class/seriallifecycleresolver.class.php
- *  \ingroup    serialtracker
+ *  \file       class/deliverablesresolver.class.php
+ *  \ingroup    deliverables
  *  \brief      Resolves the fulfillment journey of order lines and their serials.
  *
  *  Model (a "thing's journey", anchored on the ORDER LINE):
@@ -31,10 +31,10 @@
  *  The only tie between an order and its physical goods is the serial/lot
  *  attached at shipment, so MO is NOT a forward stage on the order — it is
  *  resolved per-serial (by lot) in the serial detail. All resolution is live;
- *  warranty / support-ended are routed through SerialWarrantyAdapter (deferred
+ *  warranty / support-ended are routed through WarrantyAdapter (deferred
  *  while that module is overhauled).
  */
-class SerialLifecycleResolver
+class DeliverablesResolver
 {
 	const STATE_COMPLETE = 'complete';
 	const STATE_CURRENT  = 'current';
@@ -64,9 +64,9 @@ class SerialLifecycleResolver
 	{
 		global $langs;
 		return array(
-			array('key' => 'ORD',  'label' => $langs->trans('SerialtrackerStageOrdered'), 'label_todo' => $langs->trans('SerialtrackerTodoOrdered')),
-			array('key' => 'PICK', 'label' => $langs->trans('SerialtrackerStagePicking'), 'label_todo' => $langs->trans('SerialtrackerTodoPicking')),
-			array('key' => 'SHIP', 'label' => $langs->trans('SerialtrackerStageShipped'), 'label_todo' => $langs->trans('SerialtrackerTodoShipped')),
+			array('key' => 'ORD',  'label' => $langs->trans('DeliverablesStageOrdered'), 'label_todo' => $langs->trans('DeliverablesTodoOrdered')),
+			array('key' => 'PICK', 'label' => $langs->trans('DeliverablesStagePicking'), 'label_todo' => $langs->trans('DeliverablesTodoPicking')),
+			array('key' => 'SHIP', 'label' => $langs->trans('DeliverablesStageShipped'), 'label_todo' => $langs->trans('DeliverablesTodoShipped')),
 		);
 	}
 
@@ -79,10 +79,10 @@ class SerialLifecycleResolver
 	{
 		global $langs;
 		return array(
-			array('key' => 'MFG',  'label' => $langs->trans('SerialtrackerStageManufactured'), 'label_todo' => $langs->trans('SerialtrackerTodoManufactured')),
-			array('key' => 'SHIP', 'label' => $langs->trans('SerialtrackerStageShipped'),      'label_todo' => $langs->trans('SerialtrackerTodoShipped')),
-			array('key' => 'WARR', 'label' => $langs->trans('SerialtrackerStageWarranty'),     'label_todo' => $langs->trans('SerialtrackerTodoWarranty')),
-			array('key' => 'EOL',  'label' => $langs->trans('SerialtrackerStageSupportEnded'), 'label_todo' => $langs->trans('SerialtrackerTodoSupportEnded')),
+			array('key' => 'MFG',  'label' => $langs->trans('DeliverablesStageManufactured'), 'label_todo' => $langs->trans('DeliverablesTodoManufactured')),
+			array('key' => 'SHIP', 'label' => $langs->trans('DeliverablesStageShipped'),      'label_todo' => $langs->trans('DeliverablesTodoShipped')),
+			array('key' => 'WARR', 'label' => $langs->trans('DeliverablesStageWarranty'),     'label_todo' => $langs->trans('DeliverablesTodoWarranty')),
+			array('key' => 'EOL',  'label' => $langs->trans('DeliverablesStageSupportEnded'), 'label_todo' => $langs->trans('DeliverablesTodoSupportEnded')),
 		);
 	}
 
@@ -149,7 +149,7 @@ class SerialLifecycleResolver
 	// FRONT HALF (order line -> picking -> shipped, serial identity) resolves from
 	// stable native tables: commande/commandedet, expedition(det|det_batch),
 	// product_lot, product.tobatch. BACK HALF (warranty / support-ended) is routed
-	// through SerialWarrantyAdapter, which is deliberately isolated because that
+	// through WarrantyAdapter, which is deliberately isolated because that
 	// module is being overhauled — this resolver never touches those tables.
 	// -------------------------------------------------------------------------
 
@@ -331,24 +331,24 @@ class SerialLifecycleResolver
 		$steps = array();
 		$steps[] = $this->step($ss[0], self::STATE_COMPLETE, '',
 			($lot->manufacturing_date ? $this->db->jdate($lot->manufacturing_date) : 0),
-			$langs->trans('SerialtrackerStatusProduced'));
+			$langs->trans('DeliverablesStatusProduced'));
 
 		// SHIP
 		if ($ship && !empty($ship->ship_ref)) {
 			$steps[] = $this->step($ss[1], self::STATE_COMPLETE, $ship->ship_ref,
 				($ship->date_expedition ? $this->db->jdate($ship->date_expedition) : 0),
-				$langs->trans('SerialtrackerStatusShipped'));
+				$langs->trans('DeliverablesStatusShipped'));
 		} else {
 			$steps[] = $this->step($ss[1], self::STATE_PENDING, '', 0, '');
 		}
 
 		// WARR / EOL via the isolated adapter (deferred -> pending).
-		dol_include_once('/serialtracker/class/serialwarrantyadapter.class.php');
-		$w = class_exists('SerialWarrantyAdapter')
-			? SerialWarrantyAdapter::forSerial($this->db, $batch, (int) $lot->fk_product)
+		dol_include_once('/deliverables/class/warrantyadapter.class.php');
+		$w = class_exists('WarrantyAdapter')
+			? WarrantyAdapter::forSerial($this->db, $batch, (int) $lot->fk_product)
 			: null;
 		if ($w === null) {
-			$steps[] = $this->step($ss[2], self::STATE_PENDING, '', 0, $langs->trans('SerialtrackerWarrantyPending'));
+			$steps[] = $this->step($ss[2], self::STATE_PENDING, '', 0, $langs->trans('DeliverablesWarrantyPending'));
 			$steps[] = $this->step($ss[3], self::STATE_PENDING, '', 0, '');
 		} else {
 			$warrState = !empty($w['active']) ? self::STATE_CURRENT : self::STATE_COMPLETE;
@@ -404,7 +404,7 @@ class SerialLifecycleResolver
 	 *    on_hand   = SUM(product_stock.reel) across all warehouses
 	 *    incoming  = SUM(mrp_mo.qty) for in-progress MOs (status 2)
 	 *    committed = SUM per-line max(0, ordered - shipped) over open sales orders
-	 *                (status per SERIALTRACKER_ATP_DEMAND_ALL; within the time window)
+	 *                (status per DELIVERABLES_ATP_DEMAND_ALL; within the time window)
 	 *    shortfall = max(0, committed - on_hand - incoming)
 	 *
 	 *  Action routing: a product with an active BOM is manufacturable (Create MO);
@@ -451,8 +451,8 @@ class SerialLifecycleResolver
 		}
 
 		// Committed = per-line outstanding across open orders (netted, windowed).
-		$statuses   = (getDolGlobalString('SERIALTRACKER_ATP_DEMAND_ALL', '0') === '1') ? '0,1,2' : '1,2';
-		$windowDays = (int) getDolGlobalInt('SERIALTRACKER_ATP_WINDOW_DAYS', 180);
+		$statuses   = (getDolGlobalString('DELIVERABLES_ATP_DEMAND_ALL', '0') === '1') ? '0,1,2' : '1,2';
+		$windowDays = (int) getDolGlobalInt('DELIVERABLES_ATP_WINDOW_DAYS', 180);
 		$windowClause = '';
 		if ($windowDays > 0) {
 			$windowClause = " AND c.date_commande >= '".$this->db->idate(dol_now() - ($windowDays * 86400))."'";
@@ -714,20 +714,20 @@ class SerialLifecycleResolver
 
 		// Ordered is always complete once the line exists.
 		$ordered = $this->step($os[0], self::STATE_COMPLETE, $orderRef, $orderDate,
-			$langs->trans('SerialtrackerCountOfShort', $qty));
+			$langs->trans('DeliverablesCountOfShort', $qty));
 
 		// Picking: current while units are being assigned but not all shipped.
 		$pickState = ($shipped >= $qty) ? self::STATE_COMPLETE
 			: (($picking > 0 || $shipped > 0) ? self::STATE_CURRENT : self::STATE_PENDING);
 		$picking = $this->step($os[1], $pickState,
-			($picking > 0 ? $langs->trans('SerialtrackerCountOf', $picking, $qty) : ''),
+			($picking > 0 ? $langs->trans('DeliverablesCountOf', $picking, $qty) : ''),
 			'', '');
 
 		// Shipped: complete when all shipped, current when some shipped.
 		$shipState = ($shipped >= $qty) ? self::STATE_COMPLETE
 			: ($shipped > 0 ? self::STATE_CURRENT : self::STATE_PENDING);
 		$shippedStep = $this->step($os[2], $shipState,
-			$langs->trans('SerialtrackerCountOf', $shipped, $qty),
+			$langs->trans('DeliverablesCountOf', $shipped, $qty),
 			($shipped > 0 ? $shipDate : ''),
 			($shipRef !== '' ? $shipRef : ''));
 

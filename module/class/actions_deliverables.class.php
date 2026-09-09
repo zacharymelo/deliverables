@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
  */
 
 /**
- *  \file       class/actions_serialtracker.class.php
- *  \ingroup    serialtracker
+ *  \file       class/actions_deliverables.class.php
+ *  \ingroup    deliverables
  *  \brief      Hook handler — injects the per-serial lifecycle list into project cards.
  *
  *  Mirrors Lead Tracker's proven approach: render via formObjectOptions (v22
@@ -25,7 +25,7 @@
  *  the hidden block onto the card. Positioned BELOW the card banner so it sits
  *  clearly apart from the Lead Tracker funnel for side-by-side comparison.
  */
-class ActionsSerialtracker
+class ActionsDeliverables
 {
 	/** @var DoliDB */
 	public $db;
@@ -102,38 +102,38 @@ class ActionsSerialtracker
 		}
 		$rendered[$renderKey] = true;
 
-		if (!$user->hasRight('serialtracker', 'read')) {
+		if (!$user->hasRight('deliverables', 'read')) {
 			return 0;
 		}
 
-		if (!class_exists('SerialLifecycleResolver')) {
-			dol_include_once('/serialtracker/class/seriallifecycleresolver.class.php');
+		if (!class_exists('DeliverablesResolver')) {
+			dol_include_once('/deliverables/class/deliverablesresolver.class.php');
 		}
-		if (!class_exists('SerialLifecycleRenderer')) {
-			dol_include_once('/serialtracker/class/seriallifecyclerenderer.class.php');
+		if (!class_exists('DeliverablesRenderer')) {
+			dol_include_once('/deliverables/class/deliverablesrenderer.class.php');
 		}
-		if (!class_exists('SerialLifecycleResolver') || !class_exists('SerialLifecycleRenderer')) {
+		if (!class_exists('DeliverablesResolver') || !class_exists('DeliverablesRenderer')) {
 			return 0;
 		}
 
-		$langs->loadLangs(array('serialtracker@serialtracker'));
+		$langs->loadLangs(array('deliverables@deliverables'));
 
-		$resolver = new SerialLifecycleResolver($this->db);
+		$resolver = new DeliverablesResolver($this->db);
 		$sum      = $resolver->summaryForProject((int) $object->id);
 		if (empty($sum) || (int) $sum['lines'] === 0) {
 			return 0;
 		}
 
-		$renderer = new SerialLifecycleRenderer();
+		$renderer = new DeliverablesRenderer();
 
 		// Slim one-line summary only — the full detail lives in the Fulfillment tab.
-		$tabUrl = dol_buildpath('/serialtracker/project_fulfillment.php', 1).'?id='.((int) $object->id);
+		$tabUrl = dol_buildpath('/deliverables/project_fulfillment.php', 1).'?id='.((int) $object->id);
 
-		$cssfile = dol_buildpath('/serialtracker/css/serialtracker.css', 0);
-		$url = dol_buildpath('/serialtracker/css/serialtracker.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
+		$cssfile = dol_buildpath('/deliverables/css/deliverables.css', 0);
+		$url = dol_buildpath('/deliverables/css/deliverables.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
 		$out  = '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($url).'">'."\n";
-		$out .= '<div id="serialtracker-holder" style="display:none;">';
-		$out .= '<div class="serialtracker-wrap">';
+		$out .= '<div id="deliverables-holder" style="display:none;">';
+		$out .= '<div class="deliverables-wrap">';
 		$out .= $renderer->renderSummaryLine($sum, $tabUrl);
 		$out .= '</div>';
 		$out .= '</div>'."\n";
@@ -154,9 +154,9 @@ class ActionsSerialtracker
 	{
 		return "<script>\n"
 			."jQuery(function(){\n"
-			." var holder=jQuery('#serialtracker-holder');\n"
+			." var holder=jQuery('#deliverables-holder');\n"
 			." if(!holder.length){return;}\n"
-			." var wrap=holder.children('.serialtracker-wrap');\n"
+			." var wrap=holder.children('.deliverables-wrap');\n"
 			." if(wrap.length){\n"
 			."  var anchor=jQuery('div.arearef').first();\n"
 			."  if(anchor.length){anchor.after(wrap);}\n"

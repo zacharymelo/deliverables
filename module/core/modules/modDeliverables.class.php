@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2026 Serial Tracker contributors
+/* Copyright (C) 2026 Deliverables contributors
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,9 +16,9 @@
  */
 
 /**
- *  \file       core/modules/modSerialtracker.class.php
- *  \ingroup    serialtracker
- *  \brief      Module descriptor for Serial Tracker
+ *  \file       core/modules/modDeliverables.class.php
+ *  \ingroup    deliverables
+ *  \brief      Module descriptor for Deliverables
  *
  *  An internal fulfillment / supply-readiness hub anchored on the order line.
  *  On the project and customer cards it renders a deliverables table — Ordered /
@@ -33,9 +33,9 @@
 include_once DOL_DOCUMENT_ROOT.'/core/modules/DolibarrModules.class.php';
 
 /**
- *  Class to describe and enable module Serialtracker
+ *  Class to describe and enable module Deliverables
  */
-class modSerialtracker extends DolibarrModules
+class modDeliverables extends DolibarrModules
 {
 	/**
 	 *  Constructor.
@@ -51,7 +51,7 @@ class modSerialtracker extends DolibarrModules
 		// Distinct numero from leadtracker (500121) so both install side by side.
 		$this->numero = 500122;
 
-		$this->rights_class = 'serialtracker';
+		$this->rights_class = 'deliverables';
 
 		$this->family = "products";
 		$this->module_position = '91';
@@ -59,12 +59,12 @@ class modSerialtracker extends DolibarrModules
 		$this->name = preg_replace('/^mod/i', '', get_class($this));
 
 		$this->description = "Order-fulfillment / thing's-journey tracker prototype (project + customer tabs, per-serial detail).";
-		$this->descriptionlong = "Serial Tracker follows a thing's journey anchored on the order line — Ordered, Picking, Shipped (counts per line) — then fans out into each shipped serial's back-half: Manufactured (MO traced by lot), Shipped, Under Warranty, Support Ended. Surfaced as a Fulfillment tab on projects and customers, a slim summary on the project card, and a per-serial detail page.";
+		$this->descriptionlong = "Deliverables follows a thing's journey anchored on the order line — Ordered, Picking, Shipped (counts per line) — then fans out into each shipped serial's back-half: Manufactured (MO traced by lot), Shipped, Under Warranty, Support Ended. Surfaced as a Fulfillment tab on projects and customers, a slim summary on the project card, and a per-serial detail page.";
 
-		$this->editor_name = 'Serial Tracker contributors';
+		$this->editor_name = 'Deliverables contributors';
 		$this->editor_url = '';
 
-		$this->version = '0.7.1';
+		$this->version = '0.8.0';
 
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 
@@ -92,25 +92,25 @@ class modSerialtracker extends DolibarrModules
 
 		// Fulfillment tab on both the project and the customer (third party) cards.
 		$this->tabs = array();
-		$this->tabs[] = array('data' => 'project:+serialtracker:SerialtrackerTabTitle:serialtracker@serialtracker:$user->hasRight(\'serialtracker\', \'read\'):/serialtracker/project_fulfillment.php?id=__ID__');
-		$this->tabs[] = array('data' => 'thirdparty:+serialtracker:SerialtrackerTabTitle:serialtracker@serialtracker:$user->hasRight(\'serialtracker\', \'read\'):/serialtracker/thirdparty_fulfillment.php?id=__ID__');
+		$this->tabs[] = array('data' => 'project:+deliverables:DeliverablesTabTitle:deliverables@deliverables:$user->hasRight(\'deliverables\', \'read\'):/deliverables/project_fulfillment.php?id=__ID__');
+		$this->tabs[] = array('data' => 'thirdparty:+deliverables:DeliverablesTabTitle:deliverables@deliverables:$user->hasRight(\'deliverables\', \'read\'):/deliverables/thirdparty_fulfillment.php?id=__ID__');
 
-		$this->config_page_url = array("setup.php@serialtracker");
+		$this->config_page_url = array("setup.php@deliverables");
 
 		$this->hidden = false;
 		$this->depends = array('modProjet');
 		$this->requiredby = array();
 		$this->conflictwith = array();
-		$this->langfiles = array("serialtracker@serialtracker");
+		$this->langfiles = array("deliverables@deliverables");
 		$this->phpmin = array(7, 0);
 		$this->need_dolibarr_version = array(14, 0);
 		$this->warnings_activation = array();
 		$this->warnings_activation_ext = array();
 
 		$this->const = array(
-			array('SERIALTRACKER_DEBUG',  'chaine', '0', 'Show debug output to admins only', 0),
-			array('SERIALTRACKER_ATP_DEMAND_ALL',  'chaine', '0',   'Include draft orders in ATP demand (1) or validated only (0)', 0),
-			array('SERIALTRACKER_ATP_WINDOW_DAYS', 'chaine', '180', 'ATP demand time window in days (0 = no limit)', 0),
+			array('DELIVERABLES_DEBUG',  'chaine', '0', 'Show debug output to admins only', 0),
+			array('DELIVERABLES_ATP_DEMAND_ALL',  'chaine', '0',   'Include draft orders in ATP demand (1) or validated only (0)', 0),
+			array('DELIVERABLES_ATP_WINDOW_DAYS', 'chaine', '180', 'ATP demand time window in days (0 = no limit)', 0),
 		);
 
 		$this->rights = array();
