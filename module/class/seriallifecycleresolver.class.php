@@ -30,9 +30,9 @@
  *
  *  The only tie between an order and its physical goods is the serial/lot
  *  attached at shipment, so MO is NOT a forward stage on the order — it is
- *  resolved per-serial (by lot) in the serial detail. Live resolution is not
- *  wired; SERIALTRACKER_SAMPLE = 1 backs every surface with one coherent mock
- *  dataset until the order->shipment->lot linkage is verified (ajax/debug.php).
+ *  resolved per-serial (by lot) in the serial detail. All resolution is live;
+ *  warranty / support-ended are routed through SerialWarrantyAdapter (deferred
+ *  while that module is overhauled).
  */
 class SerialLifecycleResolver
 {
@@ -98,9 +98,6 @@ class SerialLifecycleResolver
 	 */
 	public function resolveForProject($projectId)
 	{
-		if ($this->useSample()) {
-			return $this->sampleLines();
-		}
 		return $this->liveLines(array('fk_project' => (int) $projectId));
 	}
 
@@ -112,9 +109,6 @@ class SerialLifecycleResolver
 	 */
 	public function resolveForThirdparty($socId)
 	{
-		if ($this->useSample()) {
-			return $this->sampleLines();
-		}
 		return $this->liveLines(array('fk_soc' => (int) $socId));
 	}
 
@@ -126,17 +120,7 @@ class SerialLifecycleResolver
 	 */
 	public function resolveSerial($lotId)
 	{
-		$lotId = (int) $lotId;
-		if ($this->useSample()) {
-			foreach ($this->sampleSerials() as $s) {
-				if ((int) $s['lot_id'] === $lotId) {
-					return $s;
-				}
-			}
-			$all = $this->sampleSerials();
-			return !empty($all) ? $all[0] : null;
-		}
-		return $this->liveSerial($lotId);
+		return $this->liveSerial((int) $lotId);
 	}
 
 	/**
@@ -610,18 +594,8 @@ class SerialLifecycleResolver
 	}
 
 	// -------------------------------------------------------------------------
-	// Sample data (one coherent dataset behind every surface)
+	// Step / stage helpers (shared by live resolution)
 	// -------------------------------------------------------------------------
-
-	/**
-	 *  @return bool
-	 */
-	private function useSample()
-	{
-		$s = (getDolGlobalString('SERIALTRACKER_SAMPLE', '1') === '1');
-		$this->isSample = $s;
-		return $s;
-	}
 
 	/**
 	 *  Build a step with display metadata (subtitle ref, date, status label).
@@ -683,140 +657,5 @@ class SerialLifecycleResolver
 			($shipRef !== '' ? $shipRef : ''));
 
 		return array($ordered, $picking, $shippedStep);
-	}
-
-	/**
-	 *  Sample order lines (front half + serial chips).
-	 *
-	 *  @return array
-	 */
-	private function sampleLines()
-	{
-		$this->isSample = true;
-
-		// Map serials to each line via the shared serial dataset.
-		$byLine = array();
-		foreach ($this->sampleSerials() as $s) {
-			$byLine[$s['line_id']][] = array(
-				'lot_id' => $s['lot_id'],
-				'serial' => $s['serial'],
-				'stage'  => $this->currentSerialStageKey($s['steps']),
-			);
-		}
-
-		return array(
-			array(
-				'line_id'   => 5001,
-				'product'   => 'Stage 2 Compression System',
-				'order_ref' => 'CO-2405-0031',
-				'qty'       => 3,
-				'picking'   => 1,
-				'shipped'   => 2,
-				'steps'     => $this->lineSteps(3, 1, 2, 'CO-2405-0031', '2024-05-02', 'SH2405-0012', '2024-05-14'),
-				'serials'   => isset($byLine[5001]) ? $byLine[5001] : array(),
-			),
-			array(
-				'line_id'   => 5002,
-				'product'   => 'Oxygen Concentrator Unit',
-				'order_ref' => 'CO-2405-0031',
-				'qty'       => 1,
-				'picking'   => 1,
-				'shipped'   => 0,
-				'steps'     => $this->lineSteps(1, 1, 0, 'CO-2405-0031', '2024-05-02', '', ''),
-				'serials'   => isset($byLine[5002]) ? $byLine[5002] : array(),
-			),
-			array(
-				'line_id'   => 5003,
-				'product'   => 'Booster Pump Assembly',
-				'order_ref' => 'CO-2312-0018',
-				'qty'       => 1,
-				'picking'   => 0,
-				'shipped'   => 1,
-				'steps'     => $this->lineSteps(1, 0, 1, 'CO-2312-0018', '2023-11-28', 'SH2312-0007', '2023-12-06'),
-				'serials'   => isset($byLine[5003]) ? $byLine[5003] : array(),
-			),
-		);
-	}
-
-	/**
-	 *  Sample serials (back half + MO/production trace). Keyed by lot_id.
-	 *
-	 *  @return array
-	 */
-	private function sampleSerials()
-	{
-		global $langs;
-		$ss = $this->serialStages();
-
-		return array(
-			array(
-				'lot_id'     => 9001,
-				'line_id'    => 5001,
-				'serial'     => 'SN-2405-0012',
-				'product'    => 'Stage 2 Compression System',
-				'thirdparty' => 'Tristan Houle',
-				'project'    => 'PJ2505-0024',
-				'order_ref'  => 'CO-2405-0031',
-				'steps'      => array(
-					$this->step($ss[0], self::STATE_COMPLETE, 'MO-118',         '2024-05-10', $langs->trans('SerialtrackerStatusProduced')),
-					$this->step($ss[1], self::STATE_COMPLETE, 'SH2405-0012',    '2024-05-14', $langs->trans('SerialtrackerStatusShipped')),
-					$this->step($ss[2], self::STATE_CURRENT,  'exp 2026-05-14', '2024-05-14', $langs->trans('SerialtrackerStatusWarrantyActive')),
-					$this->step($ss[3], self::STATE_PENDING,  '',               '',           ''),
-				),
-				'production' => array('mo_ref' => 'MO-118', 'stocked' => '2024-05-10'),
-			),
-			array(
-				'lot_id'     => 9004,
-				'line_id'    => 5001,
-				'serial'     => 'SN-2405-0014',
-				'product'    => 'Stage 2 Compression System',
-				'thirdparty' => 'Tristan Houle',
-				'project'    => 'PJ2505-0024',
-				'order_ref'  => 'CO-2405-0031',
-				'steps'      => array(
-					$this->step($ss[0], self::STATE_COMPLETE, 'MO-118',         '2024-05-10', $langs->trans('SerialtrackerStatusProduced')),
-					$this->step($ss[1], self::STATE_COMPLETE, 'SH2405-0012',    '2024-05-14', $langs->trans('SerialtrackerStatusShipped')),
-					$this->step($ss[2], self::STATE_CURRENT,  'exp 2026-05-14', '2024-05-14', $langs->trans('SerialtrackerStatusWarrantyActive')),
-					$this->step($ss[3], self::STATE_PENDING,  '',               '',           ''),
-				),
-				'production' => array('mo_ref' => 'MO-118', 'stocked' => '2024-05-10'),
-			),
-			array(
-				'lot_id'     => 9003,
-				'line_id'    => 5003,
-				'serial'     => 'SN-2312-0007',
-				'product'    => 'Booster Pump Assembly',
-				'thirdparty' => 'Tristan Houle',
-				'project'    => 'PJ2411-0009',
-				'order_ref'  => 'CO-2312-0018',
-				'steps'      => array(
-					$this->step($ss[0], self::STATE_COMPLETE, 'MO-092',         '2023-12-02', $langs->trans('SerialtrackerStatusProduced')),
-					$this->step($ss[1], self::STATE_COMPLETE, 'SH2312-0007',    '2023-12-06', $langs->trans('SerialtrackerStatusShipped')),
-					$this->step($ss[2], self::STATE_COMPLETE, 'exp 2025-12-06', '2023-12-06', $langs->trans('SerialtrackerStatusWarrantyExpired')),
-					$this->step($ss[3], self::STATE_ENDED,    '',               '2025-12-15', $langs->trans('SerialtrackerStatusSupportEnded')),
-				),
-				'production' => array('mo_ref' => 'MO-092', 'stocked' => '2023-12-02'),
-			),
-		);
-	}
-
-	/**
-	 *  Current back-half stage key for a serial (current/ended, else last complete).
-	 *
-	 *  @param  array  $steps
-	 *  @return string
-	 */
-	public function currentSerialStageKey($steps)
-	{
-		$lastComplete = '';
-		foreach ($steps as $st) {
-			if ($st['state'] === self::STATE_CURRENT || $st['state'] === self::STATE_ENDED) {
-				return $st['key'];
-			}
-			if ($st['state'] === self::STATE_COMPLETE) {
-				$lastComplete = $st['key'];
-			}
-		}
-		return $lastComplete;
 	}
 }

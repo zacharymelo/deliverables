@@ -63,7 +63,6 @@ $form   = new Form($db);
 if ($action == 'update') {
 	// CSRF is validated automatically by main.inc.php (the hidden 'token' field
 	// below is sufficient) — no manual verification call is needed here.
-	dolibarr_set_const($db, 'SERIALTRACKER_SAMPLE', GETPOSTINT('SERIALTRACKER_SAMPLE') ? '1' : '0', 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'SERIALTRACKER_DEBUG',  GETPOSTINT('SERIALTRACKER_DEBUG')  ? '1' : '0', 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'SERIALTRACKER_ATP_DEMAND_ALL', GETPOSTINT('SERIALTRACKER_ATP_DEMAND_ALL') ? '1' : '0', 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'SERIALTRACKER_ATP_WINDOW_DAYS', (string) GETPOSTINT('SERIALTRACKER_ATP_WINDOW_DAYS'), 'chaine', 0, '', $conf->entity);
@@ -90,13 +89,6 @@ print '<table class="noborder centpercent">';
 print '<tr class="liste_titre">';
 print '<td>'.$langs->trans('Parameter').'</td>';
 print '<td class="center" width="120">'.$langs->trans('Value').'</td>';
-print '</tr>';
-
-// Sample mode
-print '<tr class="oddeven">';
-print '<td><strong>'.$langs->trans('SerialtrackerSampleMode').'</strong><br>';
-print '<span class="opacitymedium">'.$langs->trans('SerialtrackerSampleModeHelp').'</span></td>';
-print '<td class="center">'.$form->selectyesno('SERIALTRACKER_SAMPLE', getDolGlobalInt('SERIALTRACKER_SAMPLE', 1), 1).'</td>';
 print '</tr>';
 
 // Debug mode

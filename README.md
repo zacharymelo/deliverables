@@ -1,42 +1,67 @@
-# Serial Tracker (prototype)
+# Serial Tracker
 
-A **UX prototype** that tracks a *thing's journey*, anchored on the **order line**
-rather than the serial (which starts the story too late). Installs **alongside**
-Lead Tracker (numero `500122`).
+An internal **fulfillment + install-base hub** for Dolibarr, anchored on the
+**order line**. Installs alongside Lead Tracker (numero `500122`). All data is
+**live** — the demo/sample mode has been removed.
 
-## Model — two phases, joined at "Shipped"
+## What it does
 
-**Front half — per order line (counts, no per-unit identity yet):**
+- **Project & Customer → Fulfillment tab** — a **deliverables table**: every order
+  line with Ordered / Shipped / Outstanding, deduped serial chips, and the
+  product's company-wide **ATP shortfall**, with a one-click **Create MO**
+  (manufactured) or **Reorder** (purchased) action. Actionable rows sort first.
+- **Serial detail** (`serial_card.php`) — one serial's back-half: Manufactured
+  (traced by lot) → Shipped → Under Warranty → Support Ended, plus context.
+- **Slim summary** on the project main card → links into the tab.
 
-> **Ordered (N) → Picking (x) → Shipped (y)**
-
-**Back half — per serial (once a lot is attached at shipment):**
-
-> **Manufactured (MO, traced by lot) → Shipped → Under Warranty → Support Ended**
-
-The only tie between an order and its physical goods is the serial/lot attached
-at shipment, so **MO is not a forward stage on the order** — it is resolved
-per-serial (by lot) on the serial detail page.
-
-## Surfaces
-
-- **Project → Fulfillment tab** — order lines with their front-half journey + serial chips.
-- **Customer → Fulfillment tab** — every order line for a company.
-- **Serial detail page** (`serial_card.php`) — one serial's back-half journey + MO/production trace.
-- **Slim summary** on the project main card — e.g. "5 units across 3 lines · 3 shipped · 1 in warranty" → links to the tab.
-- **Subtitles + tooltips** on every step (ref / status / date + a "what's still needed" hint on open steps), mirroring the Order Progress tracker.
-
-## Status
-
-- **Display + UX: working** with `SERIALTRACKER_SAMPLE = 1` (default) — one coherent mock
-  dataset backs every surface, tagged "Sample data".
-- **Live data: NOT wired.** Verify the order→shipment→lot linkage via
-  `ajax/debug.php?project_id=N` (enable `SERIALTRACKER_DEBUG`), then wire the
-  `liveLines()`/`liveSerial()` stubs and flip `SERIALTRACKER_SAMPLE` to `0`.
-
-## Install
+## ATP / shortfall formula (per product, company-wide)
 
 ```
-python3 bin/build.py 0.2.0
+on_hand   = Σ product_stock.reel  (all warehouses)
+incoming  = Σ mrp_mo.qty          (in-progress MOs, status = 2)
+committed = Σ per-line max(0, ordered − shipped) over open sales orders
+            (validated by default; within SERIALTRACKER_ATP_WINDOW_DAYS)
+shortfall = max(0, committed − on_hand − incoming)
+```
+Manufactured (active `bom_bom`) → Create MO; else → Reorder (PO).
+
+Settings (Home → Setup → Serial Tracker): debug, "count draft orders as demand",
+demand time window (days). Warehouse scope = all.
+
+## Verified linkage (llxiw_ prefix on staging)
+
+- project → shipments: `expedition.fk_projet`
+- project → order lines: `commande.fk_projet` → `commandedet`
+- shipment line → order line: `expeditiondet.element_type='commande'` + `fk_elementdet`
+- shipment line → serial: `expeditiondet_batch.batch`
+- serial → lot: `product_lot.batch` + `fk_product` → `product_lot.rowid`
+- shipment status: `expedition.fk_statut` (0 draft, ≥1 shipped)
+- serialized product: `product.tobatch > 0`
+
+## ⚠️ PENDING INTEGRATION — pick up here next pass
+
+1. **Returns / warranty (module being overhauled).**
+   `class/serialwarrantyadapter.class.php::forSerial()` returns `null` (deferred)
+   — the back-half **Under Warranty / Support Ended** steps show "integration
+   pending". Nothing else touches `llxiw_svc_warranty` / `llxiw_customer_return*`.
+   When the returns/warranty overhaul lands, implement that one method (known
+   schema documented inside it). **Also:** "shipped"/"committed" currently count
+   raw shipment qty and do NOT net returns — a returned-not-yet-reshipped unit is
+   overstated as delivered until returns netting is added here.
+
+2. **Purchase Order action → wire to DoliBulkPO.**
+   Today "Reorder" links to the product's supplier tab. The real tool is
+   **`DoliBulkPO`** (`bulkpo_wizard.php`), which builds a draft PO from a
+   client-side product+qty selection (`selected_products` JSON on
+   `action=create`). It has **no GET seed** yet to pre-stage specific
+   products/qty. Next: add a seed entry to BulkPO, then point "Reorder ×N" at it
+   pre-seeded with the shortfall product+qty (and the product's default vendor).
+   (`PO-From-MRP` / `modBompo` handles component POs for an MO's BOM — relevant
+   after Create MO.)
+
+## Build / install
+
+```
+python3 bin/build.py <version>
 ```
 Then Home → Setup → Modules → Deploy/install external module.

@@ -78,7 +78,8 @@ dol_banner_tab($object, 'ref', $linkback, 1, 'rowid', 'nom');
 
 print '<div class="fichecenter">';
 
-$cssurl = dol_buildpath('/serialtracker/css/serialtracker.css', 1);
+$cssfile = dol_buildpath('/serialtracker/css/serialtracker.css', 0);
+$cssurl  = dol_buildpath('/serialtracker/css/serialtracker.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
 print '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($cssurl).'">'."\n";
 
 $resolver = new SerialLifecycleResolver($db);

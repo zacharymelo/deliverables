@@ -66,7 +66,8 @@ if (empty($serial)) {
 $title = $langs->trans('SerialtrackerSerialTitle').' - '.$serial['serial'];
 llxHeader('', $title);
 
-$cssurl = dol_buildpath('/serialtracker/css/serialtracker.css', 1);
+$cssfile = dol_buildpath('/serialtracker/css/serialtracker.css', 0);
+$cssurl  = dol_buildpath('/serialtracker/css/serialtracker.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
 print '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($cssurl).'">'."\n";
 
 // Header line: serial ref + product.
@@ -77,7 +78,6 @@ if (!empty($serial['product'])) {
 print load_fiche_titre($langs->trans('SerialtrackerSerialTitle').' '.$head, '', 'barcode');
 
 $renderer = new SerialLifecycleRenderer();
-$renderer->isSample = $resolver->isSample;
 print $renderer->renderSerialDetail($serial);
 
 llxFooter();

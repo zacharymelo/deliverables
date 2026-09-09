@@ -212,11 +212,6 @@ class SerialLifecycleRenderer
 		$steps = isset($serial['steps']) && is_array($serial['steps']) ? $serial['steps'] : array();
 
 		$out  = '<div class="serialtracker-panel serialtracker-detail">';
-		if ($this->isSample) {
-			$out .= '<div class="serialtracker-head"><span class="serialtracker-sample-tag">'
-				.dol_escape_htmltag($langs->trans('SerialtrackerSampleTag')).'</span></div>';
-		}
-
 		$out .= '<div class="serialtracker-detailtrack">'.$this->renderTrack($steps).'</div>';
 
 		// Production trace (MO, by lot) + context links.
@@ -302,12 +297,19 @@ class SerialLifecycleRenderer
 			return '';
 		}
 
-		$out = '<div class="serialtracker-panel">';
-		if ($this->isSample) {
-			$out .= '<div class="serialtracker-head"><span class="serialtracker-sample-tag">'
-				.dol_escape_htmltag($langs->trans('SerialtrackerSampleTag')).'</span></div>';
-		}
+		// Surface actionable rows first: shortfalls, then still-outstanding.
+		usort($rows, function ($a, $b) {
+			$asf = (isset($a['shortfall']) && $a['shortfall'] > 0) ? 1 : 0;
+			$bsf = (isset($b['shortfall']) && $b['shortfall'] > 0) ? 1 : 0;
+			if ($asf !== $bsf) {
+				return $bsf - $asf;
+			}
+			$aout = (isset($a['outstanding']) && $a['outstanding'] > 0) ? 1 : 0;
+			$bout = (isset($b['outstanding']) && $b['outstanding'] > 0) ? 1 : 0;
+			return $bout - $aout;
+		});
 
+		$out  = '<div class="serialtracker-panel">';
 		$out .= '<div class="serialtracker-tablewrap"><table class="serialtracker-deliverables">';
 		$out .= '<thead><tr>';
 		$out .= '<th>'.dol_escape_htmltag($langs->trans('SerialtrackerColProduct')).'</th>';

@@ -125,12 +125,12 @@ class ActionsSerialtracker
 		}
 
 		$renderer = new SerialLifecycleRenderer();
-		$renderer->isSample = $resolver->isSample;
 
 		// Slim one-line summary only — the full detail lives in the Fulfillment tab.
 		$tabUrl = dol_buildpath('/serialtracker/project_fulfillment.php', 1).'?id='.((int) $object->id);
 
-		$url = dol_buildpath('/serialtracker/css/serialtracker.css', 1);
+		$cssfile = dol_buildpath('/serialtracker/css/serialtracker.css', 0);
+		$url = dol_buildpath('/serialtracker/css/serialtracker.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
 		$out  = '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($url).'">'."\n";
 		$out .= '<div id="serialtracker-holder" style="display:none;">';
 		$out .= '<div class="serialtracker-wrap">';
