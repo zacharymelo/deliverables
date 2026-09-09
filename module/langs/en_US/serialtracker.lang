@@ -78,6 +78,7 @@ SerialtrackerCreateMO = Create MO ×%s
 SerialtrackerReorder = Reorder ×%s
 SerialtrackerCovered = Covered
 SerialtrackerOpenOrder = Open order
+SerialtrackerOpenProduct = Open product
 SerialtrackerSrcBest = best price
 SerialtrackerSrcFaster = faster
 SerialtrackerSrcNoVendor = no supplier price — pick vendor

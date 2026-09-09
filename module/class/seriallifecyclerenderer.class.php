@@ -385,6 +385,14 @@ class SerialLifecycleRenderer
 
 		$out  = '<tr'.$rowCls.'>';
 		$out .= '<td>'.dol_escape_htmltag($r['product']);
+		// Icon-only link to the product card (kept off the name text so it isn't
+		// misclicked against the order-ref link on the line below). Real products only.
+		if (!empty($r['product_id'])) {
+			$pu = DOL_URL_ROOT.'/product/card.php?id='.((int) $r['product_id']);
+			$out .= ' <a class="serialtracker-prodlink" href="'.dol_escape_htmltag($pu).'" title="'
+				.dol_escape_htmltag($langs->trans('SerialtrackerOpenProduct')).'">'
+				.img_picto('', 'product', 'class="pictofixedwidth"').'</a>';
+		}
 		if (!empty($r['order_ref'])) {
 			// One-click breadcrumb to the sales order this line belongs to.
 			if (!empty($r['commande_id'])) {
