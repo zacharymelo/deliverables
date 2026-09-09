@@ -222,6 +222,12 @@ a.serialtracker-orderlink:hover { text-decoration: underline; }
 .serialtracker-act-po { background: #ef8c00; color: #fff; }
 .serialtracker-act-po:hover { background: #cf7600; color: #fff; text-decoration: none; }
 .serialtracker-ok { color: #2e7d32; font-weight: bold; }
+
+/* Reorder sourcing sublines (best price / faster vendor) */
+.serialtracker-src { display: block; margin-top: 3px; font-size: 10px; color: #888; }
+a.serialtracker-src-fast { color: #1976d2; text-decoration: none; }
+a.serialtracker-src-fast:hover { text-decoration: underline; }
+.serialtracker-src-none { color: #b26a00; font-style: italic; }
 .serialtracker-po-pick { cursor: pointer; margin-right: 2px; }
 .serialtracker-po-check { vertical-align: middle; }
 

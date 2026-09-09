@@ -429,15 +429,47 @@ class SerialLifecycleRenderer
 				$out .= '<a class="serialtracker-act serialtracker-act-mo" href="'.dol_escape_htmltag($u).'">'
 					.dol_escape_htmltag($langs->trans('SerialtrackerCreateMO', $this->fmt($short))).'</a>';
 			} else {
+				$src = isset($r['source']) ? $r['source'] : null;
+				$ch  = ($src && !empty($src['cheapest'])) ? $src['cheapest'] : null;
+				$vid = $ch ? (int) $ch['vendor_id'] : 0;
+
 				// Checkbox groups this purchased-short line into a multi-line PO;
-				// the link beside it still does a single-item reorder.
+				// the link beside it still does a single-item reorder (cheapest vendor).
 				if ($bulkpo) {
 					$out .= '<label class="serialtracker-po-pick" title="'.dol_escape_htmltag($langs->trans('SerialtrackerPoSelectHint')).'">'
-						.'<input type="checkbox" class="serialtracker-po-check" data-pid="'.((int) $r['product_id']).'" data-qty="'.dol_escape_htmltag($this->fmt($short)).'"></label> ';
+						.'<input type="checkbox" class="serialtracker-po-check" data-pid="'.((int) $r['product_id']).'" data-qty="'.dol_escape_htmltag($this->fmt($short)).'" data-vendor="'.$vid.'"></label> ';
 				}
-				$u = $this->reorderUrl((int) $r['product_id'], $short);
+				$u = $this->reorderUrl((int) $r['product_id'], $short, $vid);
 				$out .= '<a class="serialtracker-act serialtracker-act-po" href="'.dol_escape_htmltag($u).'">'
 					.dol_escape_htmltag($langs->trans('SerialtrackerReorder', $this->fmt($short))).'</a>';
+
+				// Sourcing sublines: best price (seeds cheapest) + optional faster vendor.
+				if ($ch) {
+					$bits = array($ch['vendor']);
+					if ($ch['unit'] > 0) {
+						$bits[] = price($ch['unit']);
+					}
+					if ($ch['lead'] > 0) {
+						$bits[] = $this->fmt($ch['lead']).'d';
+					}
+					$out .= '<span class="serialtracker-src">'.dol_escape_htmltag($langs->trans('SerialtrackerSrcBest'))
+						.': '.dol_escape_htmltag(implode(' · ', $bits)).'</span>';
+
+					if (!empty($src['fastest'])) {
+						$f  = $src['fastest'];
+						$fu = $this->reorderUrl((int) $r['product_id'], $short, (int) $f['vendor_id']);
+						$fbits = array($f['vendor']);
+						if ($f['lead'] > 0) {
+							$fbits[] = $this->fmt($f['lead']).'d';
+						}
+						$out .= '<a class="serialtracker-src serialtracker-src-fast" href="'.dol_escape_htmltag($fu).'">'
+							.dol_escape_htmltag($langs->trans('SerialtrackerSrcFaster')).': '
+							.dol_escape_htmltag(implode(' · ', $fbits)).' &rsaquo;</a>';
+					}
+				} else {
+					$out .= '<span class="serialtracker-src serialtracker-src-none">'
+						.dol_escape_htmltag($langs->trans('SerialtrackerSrcNoVendor')).'</span>';
+				}
 			}
 		} else {
 			$out .= '<span class="serialtracker-ok" title="'.dol_escape_htmltag($langs->trans('SerialtrackerCovered')).'">&#10003;</span>';
@@ -459,11 +491,15 @@ class SerialLifecycleRenderer
 	 *  @param  float  $qty
 	 *  @return string
 	 */
-	private function reorderUrl($productId, $qty)
+	private function reorderUrl($productId, $qty, $vendorId = 0)
 	{
 		if (function_exists('isModEnabled') && isModEnabled('bulkpo')) {
 			$seed = base64_encode(json_encode(array(array('id' => (int) $productId, 'qty' => (float) $qty))));
-			return dol_buildpath('/bulkpo/bulkpo_wizard.php', 1).'?seed='.rawurlencode($seed);
+			$u = dol_buildpath('/bulkpo/bulkpo_wizard.php', 1).'?seed='.rawurlencode($seed);
+			if ((int) $vendorId > 0) {
+				$u .= '&socid='.((int) $vendorId); // pre-select the chosen vendor in the seed
+			}
+			return $u;
 		}
 		return DOL_URL_ROOT.'/product/fournisseurs.php?id='.((int) $productId);
 	}

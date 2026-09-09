@@ -481,6 +481,77 @@ class SerialLifecycleResolver
 	}
 
 	/**
+	 *  Best supplier options per product, for the reorder action: the cheapest
+	 *  vendor (by unit price) and the fastest (by delivery_time_days), so a worker
+	 *  can pick speed vs cost. A product with no supplier price returns nothing
+	 *  (Reorder then opens the wizard with no vendor pre-chosen).
+	 *
+	 *  @param  int[]  $productIds
+	 *  @return array  productId => ['cheapest'=>[vendor_id,vendor,unit,lead], 'fastest'=>[...] (only if a different, faster vendor)]
+	 */
+	public function supplierOptions($productIds)
+	{
+		$out = array();
+		$productIds = array_values(array_unique(array_filter(array_map('intval', $productIds))));
+		if (empty($productIds)) {
+			return $out;
+		}
+		$sql = "SELECT pfp.fk_product, pfp.fk_soc, s.nom as vendor,"
+			." pfp.unitprice, pfp.price, pfp.quantity, pfp.delivery_time_days as lead"
+			." FROM ".MAIN_DB_PREFIX."product_fournisseur_price pfp"
+			." INNER JOIN ".MAIN_DB_PREFIX."societe s ON s.rowid = pfp.fk_soc"
+			." WHERE pfp.fk_product IN (".implode(',', $productIds).")"
+			." AND pfp.entity IN (".getEntity('product').")";
+		$r = $this->db->query($sql);
+		if (!$r) {
+			return $out;
+		}
+		$byProd = array();
+		while ($o = $this->db->fetch_object($r)) {
+			$unit = (float) $o->unitprice;
+			if ($unit <= 0) {
+				$qy = (float) $o->quantity;
+				$unit = ($qy > 0) ? ((float) $o->price / $qy) : (float) $o->price;
+			}
+			$byProd[(int) $o->fk_product][] = array(
+				'vendor_id' => (int) $o->fk_soc,
+				'vendor'    => $o->vendor,
+				'unit'      => $unit,
+				'lead'      => (int) $o->lead,
+			);
+		}
+		foreach ($byProd as $pid => $rowsP) {
+			$cheapest = null;
+			foreach ($rowsP as $row) {
+				if ($row['unit'] <= 0) {
+					continue;
+				}
+				if ($cheapest === null || $row['unit'] < $cheapest['unit']) {
+					$cheapest = $row;
+				}
+			}
+			if ($cheapest === null) {
+				$cheapest = $rowsP[0]; // no priced row — still surface a vendor
+			}
+			$fastest = null;
+			foreach ($rowsP as $row) {
+				if ($row['lead'] <= 0) {
+					continue;
+				}
+				if ($fastest === null || $row['lead'] < $fastest['lead']) {
+					$fastest = $row;
+				}
+			}
+			$entry = array('cheapest' => $cheapest);
+			if ($fastest !== null && (int) $fastest['vendor_id'] !== (int) $cheapest['vendor_id']) {
+				$entry['fastest'] = $fastest;
+			}
+			$out[$pid] = $entry;
+		}
+		return $out;
+	}
+
+	/**
 	 *  Deliverables for a project/customer: every order line with fulfillment
 	 *  counts, deduped serials, and the product's ATP/shortfall. Not collapsed.
 	 *
@@ -581,6 +652,7 @@ class SerialLifecycleResolver
 		}
 
 		$atp = $this->atpForProducts(array_values($pids));
+		$src = $this->supplierOptions(array_values($pids));
 
 		$out = array();
 		foreach ($rows as $r) {
@@ -589,7 +661,9 @@ class SerialLifecycleResolver
 			$r['outstanding'] = max(0, $r['ordered'] - $shipped);
 			$a = isset($atp[$r['product_id']]) ? $atp[$r['product_id']]
 				: array('onhand' => 0, 'incoming' => 0, 'committed' => 0, 'shortfall' => 0, 'manufacturable' => false, 'bom_id' => 0);
-			$out[] = array_merge($r, $a);
+			$r = array_merge($r, $a);
+			$r['source'] = isset($src[$r['product_id']]) ? $src[$r['product_id']] : null;
+			$out[] = $r;
 		}
 		return $out;
 	}
