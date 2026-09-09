@@ -119,19 +119,22 @@ class ActionsSerialtracker
 		$langs->loadLangs(array('serialtracker@serialtracker'));
 
 		$resolver = new SerialLifecycleResolver($this->db);
-		$serials  = $resolver->resolveForProject((int) $object->id);
-		if (empty($serials)) {
+		$sum      = $resolver->summaryForProject((int) $object->id);
+		if (empty($sum) || (int) $sum['lines'] === 0) {
 			return 0;
 		}
 
 		$renderer = new SerialLifecycleRenderer();
 		$renderer->isSample = $resolver->isSample;
 
+		// Slim one-line summary only — the full detail lives in the Fulfillment tab.
+		$tabUrl = dol_buildpath('/serialtracker/project_fulfillment.php', 1).'?id='.((int) $object->id);
+
 		$url = dol_buildpath('/serialtracker/css/serialtracker.css', 1);
 		$out  = '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($url).'">'."\n";
 		$out .= '<div id="serialtracker-holder" style="display:none;">';
 		$out .= '<div class="serialtracker-wrap">';
-		$out .= $renderer->render($serials);
+		$out .= $renderer->renderSummaryLine($sum, $tabUrl);
 		$out .= '</div>';
 		$out .= '</div>'."\n";
 		$out .= $this->relocationScript();

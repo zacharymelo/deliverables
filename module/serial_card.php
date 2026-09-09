@@ -1,0 +1,84 @@
+<?php
+/* Copyright (C) 2026 Serial Tracker contributors
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/**
+ *  \file       serial_card.php
+ *  \ingroup    serialtracker
+ *  \brief      Per-serial detail: back-half journey + MO/production trace by lot.
+ */
+
+// Load Dolibarr environment
+$res = 0;
+if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
+}
+$tmp = realpath(__FILE__);
+$i = strlen($tmp) - 1;
+while ($i > 0 && !$res) {
+	if (file_exists(substr($tmp, 0, $i)."/main.inc.php")) {
+		$res = @include substr($tmp, 0, $i)."/main.inc.php";
+		break;
+	}
+	$i--;
+}
+if (!$res && file_exists("../../main.inc.php")) {
+	$res = @include "../../main.inc.php";
+}
+if (!$res) {
+	die("Include of main fails");
+}
+
+dol_include_once('/serialtracker/class/seriallifecycleresolver.class.php');
+dol_include_once('/serialtracker/class/seriallifecyclerenderer.class.php');
+
+$langs->loadLangs(array('serialtracker@serialtracker'));
+
+$id = GETPOSTINT('id'); // product_lot rowid
+
+if (!isModEnabled('serialtracker')) {
+	accessforbidden('Module not enabled');
+}
+if (!$user->hasRight('serialtracker', 'read')) {
+	accessforbidden();
+}
+
+$resolver = new SerialLifecycleResolver($db);
+$serial   = $resolver->resolveSerial($id);
+
+if (empty($serial)) {
+	accessforbidden('Serial not found');
+}
+
+$title = $langs->trans('SerialtrackerSerialTitle').' - '.$serial['serial'];
+llxHeader('', $title);
+
+$cssurl = dol_buildpath('/serialtracker/css/serialtracker.css', 1);
+print '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($cssurl).'">'."\n";
+
+// Header line: serial ref + product.
+$head = dol_escape_htmltag($serial['serial']);
+if (!empty($serial['product'])) {
+	$head .= ' <span class="opacitymedium">'.dol_escape_htmltag($serial['product']).'</span>';
+}
+print load_fiche_titre($langs->trans('SerialtrackerSerialTitle').' '.$head, '', 'barcode');
+
+$renderer = new SerialLifecycleRenderer();
+$renderer->isSample = $resolver->isSample;
+print $renderer->renderSerialDetail($serial);
+
+llxFooter();
+$db->close();

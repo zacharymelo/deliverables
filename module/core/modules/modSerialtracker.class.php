@@ -55,13 +55,13 @@ class modSerialtracker extends DolibarrModules
 
 		$this->name = preg_replace('/^mod/i', '', get_class($this));
 
-		$this->description = "Per-serial lifecycle tracker prototype rendered on the project card.";
-		$this->descriptionlong = "Serial Tracker renders a lifecycle step-indicator for each serial (product_lot) associated with a project — Manufactured, Shipped, Under Warranty, Support Ended — driven by the MRP/MO, shipment and warranty data. A prototype for comparing serial-lifecycle UX against the sales funnel.";
+		$this->description = "Order-fulfillment / thing's-journey tracker prototype (project + customer tabs, per-serial detail).";
+		$this->descriptionlong = "Serial Tracker follows a thing's journey anchored on the order line — Ordered, Picking, Shipped (counts per line) — then fans out into each shipped serial's back-half: Manufactured (MO traced by lot), Shipped, Under Warranty, Support Ended. Surfaced as a Fulfillment tab on projects and customers, a slim summary on the project card, and a per-serial detail page.";
 
 		$this->editor_name = 'Serial Tracker contributors';
 		$this->editor_url = '';
 
-		$this->version = '0.1.0';
+		$this->version = '0.2.0';
 
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 
@@ -86,6 +86,11 @@ class modSerialtracker extends DolibarrModules
 		);
 
 		$this->dirs = array();
+
+		// Fulfillment tab on both the project and the customer (third party) cards.
+		$this->tabs = array();
+		$this->tabs[] = array('data' => 'project:+serialtracker:SerialtrackerTabTitle:serialtracker@serialtracker:$user->hasRight(\'serialtracker\', \'read\'):/serialtracker/project_fulfillment.php?id=__ID__');
+		$this->tabs[] = array('data' => 'thirdparty:+serialtracker:SerialtrackerTabTitle:serialtracker@serialtracker:$user->hasRight(\'serialtracker\', \'read\'):/serialtracker/thirdparty_fulfillment.php?id=__ID__');
 
 		$this->config_page_url = array();
 

@@ -3,17 +3,65 @@
 
 # Module
 Module500122Name = Serial Tracker
-Module500122Desc = Per-serial lifecycle tracker prototype rendered on the project card.
+Module500122Desc = Order-fulfillment / thing's-journey tracker (project + customer tabs, per-serial detail).
 
-# UI
-SerialtrackerTitle = Serial lifecycle
+# Tabs / titles
+SerialtrackerTabTitle = Fulfillment
+SerialtrackerTitle = Fulfillment
+SerialtrackerSerialTitle = Serial
 SerialtrackerSampleTag = Sample data
+SerialtrackerViewAll = View all
+SerialtrackerNoLines = No order lines to track yet.
 
-# Lifecycle stages
-SerialtrackerStageManufactured = Manufactured
+# Front-half stages (per order line)
+SerialtrackerStageOrdered = Ordered
+SerialtrackerStagePicking = Picking
 SerialtrackerStageShipped = Shipped
+SerialtrackerTodoOrdered = Order
+SerialtrackerTodoPicking = Pick / assign
+SerialtrackerTodoShipped = Ship
+
+# Back-half stages (per serial)
+SerialtrackerStageManufactured = Manufactured
 SerialtrackerStageWarranty = Under Warranty
 SerialtrackerStageSupportEnded = Support Ended
+SerialtrackerTodoManufactured = Manufacture
+SerialtrackerTodoWarranty = Register warranty
+SerialtrackerTodoSupportEnded = Support active
+
+# "What's still needed" hints (open steps)
+SerialtrackerHintOrdered = Order line recorded
+SerialtrackerHintPicking = Units being assigned to a shipment
+SerialtrackerHintShipped = Awaiting shipment
+SerialtrackerHintManufactured = Awaiting manufacture
+SerialtrackerHintWarranty = Warranty not yet registered
+SerialtrackerHintSupportEnded = Support ongoing
+
+# Status labels (tooltips)
+SerialtrackerStatusProduced = Produced
+SerialtrackerStatusShipped = Shipped
+SerialtrackerStatusAwaitingShip = Awaiting shipment
+SerialtrackerStatusWarrantyActive = Warranty active
+SerialtrackerStatusWarrantyExpired = Warranty expired
+SerialtrackerStatusSupportEnded = Support ended
+
+# Counts
+SerialtrackerCountOf = %s of %s
+SerialtrackerCountOfShort = %s ordered
+SerialtrackerQtyUnits = %s units
+
+# Slim summary line (project card)
+SerialtrackerSummaryUnits = %s units across %s lines
+SerialtrackerSummaryShipped = %s shipped
+SerialtrackerSummaryPicking = %s picking
+SerialtrackerSummaryWarranty = %s in warranty
+SerialtrackerSummaryEnded = %s support ended
+
+# Serial detail fields
+SerialtrackerFieldProduction = Production
+SerialtrackerFieldOrder = Order
+SerialtrackerFieldProject = Project
+SerialtrackerFieldThirdparty = Customer
 
 # Permissions
-Permission50012201 = See the serial lifecycle tracker
+Permission50012201 = See the fulfillment / serial tracker
