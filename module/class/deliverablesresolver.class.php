@@ -314,7 +314,7 @@ class DeliverablesResolver
 
 		// Shipment for this serial (most recent).
 		$ship = null;
-		$sqlS = "SELECT e.ref as ship_ref, e.date_expedition, e.fk_projet, e.fk_soc, ed.fk_elementdet as line_id"
+		$sqlS = "SELECT e.rowid as expedition_id, e.ref as ship_ref, e.date_expedition, e.fk_projet, e.fk_soc, ed.fk_elementdet as line_id"
 			." FROM ".MAIN_DB_PREFIX."expeditiondet_batch eb"
 			." INNER JOIN ".MAIN_DB_PREFIX."expeditiondet ed ON ed.rowid = eb.fk_expeditiondet"
 			." INNER JOIN ".MAIN_DB_PREFIX."expedition e ON e.rowid = ed.fk_expedition"
@@ -358,39 +358,68 @@ class DeliverablesResolver
 			$steps[] = $this->step($ss[3], $eolState, '', (!empty($w['ended_ts']) ? (int) $w['ended_ts'] : 0), '');
 		}
 
-		// Context.
+		// Context — capture ids (not just refs) so the detail page can link out.
+		$expeditionId = ($ship && !empty($ship->expedition_id)) ? (int) $ship->expedition_id : 0;
+		$fkProjet     = ($ship && !empty($ship->fk_projet)) ? (int) $ship->fk_projet : 0;
+		$fkSoc        = ($ship && !empty($ship->fk_soc)) ? (int) $ship->fk_soc : 0;
+
 		$orderRef = '';
+		$commandeId = 0;
 		if ($ship && !empty($ship->line_id)) {
-			$rc = $this->db->query("SELECT c.ref FROM ".MAIN_DB_PREFIX."commandedet cd"
+			$rc = $this->db->query("SELECT c.rowid as commande_id, c.ref FROM ".MAIN_DB_PREFIX."commandedet cd"
 				." INNER JOIN ".MAIN_DB_PREFIX."commande c ON c.rowid = cd.fk_commande"
 				." WHERE cd.rowid = ".((int) $ship->line_id));
 			if ($rc && ($rco = $this->db->fetch_object($rc))) {
-				$orderRef = $rco->ref;
+				$orderRef   = $rco->ref;
+				$commandeId = (int) $rco->commande_id;
 			}
 		}
 		$projectRef = '';
-		if ($ship && !empty($ship->fk_projet)) {
-			$rp = $this->db->query("SELECT ref FROM ".MAIN_DB_PREFIX."projet WHERE rowid = ".((int) $ship->fk_projet));
+		if ($fkProjet > 0) {
+			$rp = $this->db->query("SELECT ref FROM ".MAIN_DB_PREFIX."projet WHERE rowid = ".$fkProjet);
 			if ($rp && ($rpo = $this->db->fetch_object($rp))) {
 				$projectRef = $rpo->ref;
 			}
 		}
 		$thirdparty = '';
-		if ($ship && !empty($ship->fk_soc)) {
-			$rt = $this->db->query("SELECT nom FROM ".MAIN_DB_PREFIX."societe WHERE rowid = ".((int) $ship->fk_soc));
+		if ($fkSoc > 0) {
+			$rt = $this->db->query("SELECT nom FROM ".MAIN_DB_PREFIX."societe WHERE rowid = ".$fkSoc);
 			if ($rt && ($rto = $this->db->fetch_object($rt))) {
 				$thirdparty = $rto->nom;
 			}
 		}
 
+		// Manufacturing order that produced this serial (mrp_production produced-role row).
+		$moId = 0;
+		$moRef = '';
+		$rm = $this->db->query("SELECT mp.fk_mo, m.ref FROM ".MAIN_DB_PREFIX."mrp_production mp"
+			." INNER JOIN ".MAIN_DB_PREFIX."mrp_mo m ON m.rowid = mp.fk_mo"
+			." WHERE mp.batch = '".$this->db->escape($batch)."' AND mp.role = 'produced'"
+			." AND m.fk_product = ".((int) $lot->fk_product)
+			." ORDER BY mp.rowid DESC");
+		if ($rm && ($rmo = $this->db->fetch_object($rm))) {
+			$moId  = (int) $rmo->fk_mo;
+			$moRef = $rmo->ref;
+		}
+
 		return array(
-			'lot_id'     => (int) $lot->rowid,
-			'serial'     => $batch,
-			'product'    => ($lot->product_label != '' ? $lot->product_label : $lot->product_ref),
-			'thirdparty' => $thirdparty,
-			'project'    => $projectRef,
-			'order_ref'  => $orderRef,
-			'steps'      => $steps,
+			'lot_id'             => (int) $lot->rowid,
+			'serial'             => $batch,
+			'product'            => ($lot->product_label != '' ? $lot->product_label : $lot->product_ref),
+			'product_id'         => (int) $lot->fk_product,
+			'thirdparty'         => $thirdparty,
+			'fk_soc'             => $fkSoc,
+			'project'            => $projectRef,
+			'fk_projet'          => $fkProjet,
+			'order_ref'          => $orderRef,
+			'commande_id'        => $commandeId,
+			'ship_ref'           => ($ship && !empty($ship->ship_ref)) ? $ship->ship_ref : '',
+			'expedition_id'      => $expeditionId,
+			'mo_ref'             => $moRef,
+			'mo_id'              => $moId,
+			'manufacturing_date' => ($lot->manufacturing_date ? $this->db->jdate($lot->manufacturing_date) : 0),
+			'eol_date'           => ($lot->eol_date ? $this->db->jdate($lot->eol_date) : 0),
+			'steps'              => $steps,
 		);
 	}
 

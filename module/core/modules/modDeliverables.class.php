@@ -64,7 +64,7 @@ class modDeliverables extends DolibarrModules
 		$this->editor_name = 'Deliverables contributors';
 		$this->editor_url = '';
 
-		$this->version = '1.0.0';
+		$this->version = '1.1.0';
 
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 

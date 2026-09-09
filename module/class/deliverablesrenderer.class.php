@@ -214,24 +214,53 @@ class DeliverablesRenderer
 		$out  = '<div class="deliverables-panel deliverables-detail">';
 		$out .= '<div class="deliverables-detailtrack">'.$this->renderTrack($steps).'</div>';
 
-		// Production trace (MO, by lot) + context links.
-		$rows = array();
-		if (!empty($serial['production']['mo_ref'])) {
-			$val = $serial['production']['mo_ref'];
-			if (!empty($serial['production']['stocked'])) {
-				$val .= ' · '.dol_print_date(dol_stringtotime($serial['production']['stocked'], 1), 'day');
-			}
-			$rows[$langs->trans('DeliverablesFieldProduction')] = $val;
+		// Linked records — every native object this serial references, clickable.
+		$g = function ($k) use ($serial) { return isset($serial[$k]) ? $serial[$k] : null; };
+		$links = array();
+		if ($g('lot_id')) {
+			$links[] = array($langs->trans('DeliverablesLinkLot'), DOL_URL_ROOT.'/product/stock/productlot_card.php?id='.((int) $g('lot_id')), $g('serial'), 'barcode');
 		}
-		if (!empty($serial['order_ref']))  { $rows[$langs->trans('DeliverablesFieldOrder')]      = $serial['order_ref']; }
-		if (!empty($serial['project']))    { $rows[$langs->trans('DeliverablesFieldProject')]    = $serial['project']; }
-		if (!empty($serial['thirdparty'])) { $rows[$langs->trans('DeliverablesFieldThirdparty')] = $serial['thirdparty']; }
+		if ($g('product_id')) {
+			$links[] = array($langs->trans('DeliverablesFieldProduct'), DOL_URL_ROOT.'/product/card.php?id='.((int) $g('product_id')), $g('product'), 'product');
+		}
+		if ($g('mo_id')) {
+			$links[] = array($langs->trans('DeliverablesLinkMO'), DOL_URL_ROOT.'/mrp/mo_card.php?id='.((int) $g('mo_id')), $g('mo_ref'), 'mrp');
+		}
+		if ($g('commande_id')) {
+			$links[] = array($langs->trans('DeliverablesFieldOrder'), DOL_URL_ROOT.'/commande/card.php?id='.((int) $g('commande_id')), $g('order_ref'), 'order');
+		}
+		if ($g('expedition_id')) {
+			$links[] = array($langs->trans('DeliverablesLinkShipment'), DOL_URL_ROOT.'/expedition/card.php?id='.((int) $g('expedition_id')), $g('ship_ref'), 'dolly');
+		}
+		if ($g('fk_projet')) {
+			$links[] = array($langs->trans('DeliverablesFieldProject'), DOL_URL_ROOT.'/projet/card.php?id='.((int) $g('fk_projet')), $g('project'), 'project');
+		}
+		if ($g('fk_soc')) {
+			$links[] = array($langs->trans('DeliverablesFieldThirdparty'), DOL_URL_ROOT.'/societe/card.php?socid='.((int) $g('fk_soc')), $g('thirdparty'), 'company');
+		}
 
-		if (!empty($rows)) {
+		if (!empty($links)) {
+			$out .= '<div class="deliverables-detailhead">'.dol_escape_htmltag($langs->trans('DeliverablesLinkedRecords')).'</div>';
 			$out .= '<table class="deliverables-detailtable">';
-			foreach ($rows as $k => $v) {
-				$out .= '<tr><td class="deliverables-dt-key">'.dol_escape_htmltag($k).'</td>'
-					.'<td>'.dol_escape_htmltag($v).'</td></tr>';
+			foreach ($links as $lk) {
+				list($label, $url, $text, $picto) = $lk;
+				$out .= '<tr><td class="deliverables-dt-key">'.dol_escape_htmltag($label).'</td><td>'
+					.'<a href="'.dol_escape_htmltag($url).'">'.img_picto('', $picto, 'class="pictofixedwidth"')
+					.dol_escape_htmltag($text !== null && $text !== '' ? $text : '#'.$url).'</a></td></tr>';
+			}
+			$out .= '</table>';
+		}
+
+		// Native lot / MRP facts.
+		$facts = array();
+		if ($g('manufacturing_date')) { $facts[$langs->trans('DeliverablesFieldManufactured')] = dol_print_date((int) $g('manufacturing_date'), 'day'); }
+		if ($g('eol_date'))           { $facts[$langs->trans('DeliverablesFieldEol')]          = dol_print_date((int) $g('eol_date'), 'day'); }
+
+		if (!empty($facts)) {
+			$out .= '<div class="deliverables-detailhead">'.dol_escape_htmltag($langs->trans('DeliverablesDetails')).'</div>';
+			$out .= '<table class="deliverables-detailtable">';
+			foreach ($facts as $k => $v) {
+				$out .= '<tr><td class="deliverables-dt-key">'.dol_escape_htmltag($k).'</td><td>'.dol_escape_htmltag($v).'</td></tr>';
 			}
 			$out .= '</table>';
 		}

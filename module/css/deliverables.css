@@ -288,6 +288,9 @@ a.deliverables-src-fast:hover { text-decoration: underline; }
 
 /* --- Serial detail page --- */
 .deliverables-detail { max-width: 720px; }
+.deliverables-detailhead { font-weight: bold; text-transform: uppercase; letter-spacing: 0.03em; color: #667; font-size: 11px; margin: 16px 0 4px; }
+.deliverables-detailtable a { text-decoration: none; }
+.deliverables-detailtable a:hover { text-decoration: underline; }
 .deliverables-detailtrack { padding: 10px 0 4px; }
 .deliverables-detailtable {
 	width: 100%;

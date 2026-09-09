@@ -93,9 +93,17 @@ DeliverablesAtpWindowHelp = Only orders placed within this many days count towar
 
 # Serial detail fields
 DeliverablesFieldProduction = Production
+DeliverablesFieldProduct = Product
 DeliverablesFieldOrder = Order
 DeliverablesFieldProject = Project
 DeliverablesFieldThirdparty = Customer
+DeliverablesFieldManufactured = Manufactured
+DeliverablesFieldEol = End of life
+DeliverablesLinkedRecords = Linked records
+DeliverablesLinkLot = Serial / lot
+DeliverablesLinkMO = Manufacturing order
+DeliverablesLinkShipment = Shipment
+DeliverablesDetails = Details
 
 # Settings
 DeliverablesSetup = Deliverables setup
