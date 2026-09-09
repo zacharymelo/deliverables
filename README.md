@@ -14,8 +14,10 @@ An internal **fulfillment + install-base hub** for Dolibarr, anchored on the
   `delivery_time_days` lead — and pre-selects the chosen vendor in the PO seed.
   Product name → product card (icon link); order ref → sales-order card.
   Actionable rows (shortfall, then outstanding) sort first.
-- **Serial detail** (`serial_card.php`) — one serial's back-half: Manufactured
-  (traced by lot) → Shipped → Under Warranty → Support Ended, plus context.
+- **Native lot-card tab** (`lot_fulfillment.php`) — augments Dolibarr's product-lot
+  card with the serial's back-half (Manufactured → Shipped → Under Warranty →
+  Support Ended) and clickable links to its order, shipment, MO, project & customer.
+  Serial chips link to the native lot card.
 - **Slim summary** on the project main card → links into the tab.
 
 ## ATP / shortfall formula (per product, company-wide)

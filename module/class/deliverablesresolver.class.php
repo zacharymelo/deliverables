@@ -20,7 +20,7 @@
  *  \ingroup    deliverables
  *  \brief      Resolves the fulfillment journey of order lines and their serials.
  *
- *  Model (a "thing's journey", anchored on the ORDER LINE):
+ *  Model (anchored on the ORDER LINE):
  *
  *    FRONT HALF — per order line, as counts (no per-unit identity yet):
  *        Ordered (N) -> Picking (x) -> Shipped (y)

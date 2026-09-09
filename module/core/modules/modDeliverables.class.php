@@ -24,10 +24,10 @@
  *  On the project and customer cards it renders a deliverables table — Ordered /
  *  Shipped / Outstanding per line, the product's company-wide ATP shortfall, and
  *  a one-click Create MO (manufactured) or Reorder (purchased, with cheapest /
- *  fastest supplier sourcing) — plus a per-serial detail page for the back half
- *  (manufacture -> ship -> warranty -> support). Read-only over native data
- *  (commande / expedition / product_stock / mrp_mo / product_fournisseur_price);
- *  no core file changes. (A rename is proposed — this shifted well past "serial".)
+ *  fastest supplier sourcing). Each shipped serial's back-half (manufacture ->
+ *  ship -> warranty -> support) plus its linked records is rendered as a tab on
+ *  the native product-lot card. Read-only over native data (commande / expedition
+ *  / product_stock / mrp_mo / product_fournisseur_price); no core file changes.
  */
 
 include_once DOL_DOCUMENT_ROOT.'/core/modules/DolibarrModules.class.php';
@@ -58,13 +58,13 @@ class modDeliverables extends DolibarrModules
 
 		$this->name = preg_replace('/^mod/i', '', get_class($this));
 
-		$this->description = "Order-fulfillment / thing's-journey tracker prototype (project + customer tabs, per-serial detail).";
-		$this->descriptionlong = "Deliverables follows a thing's journey anchored on the order line — Ordered, Picking, Shipped (counts per line) — then fans out into each shipped serial's back-half: Manufactured (MO traced by lot), Shipped, Under Warranty, Support Ended. Surfaced as a Fulfillment tab on projects and customers, a slim summary on the project card, and a per-serial detail page.";
+		$this->description = "Order-line fulfillment, ATP shortfall and reorder hub (project & customer tabs, native lot-card tab).";
+		$this->descriptionlong = "Deliverables shows, per sales-order line, Ordered / Shipped / Outstanding and the product's company-wide ATP shortfall, with a one-click Create MO (manufactured) or Reorder (purchased — cheapest/fastest supplier, seeded into Bulk PO). Surfaced as a tab on projects and customers, a slim summary on the project card, and a fulfillment tab on the native product-lot card.";
 
 		$this->editor_name = 'Deliverables contributors';
 		$this->editor_url = '';
 
-		$this->version = '1.2.0';
+		$this->version = '1.2.1';
 
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 
@@ -119,7 +119,7 @@ class modDeliverables extends DolibarrModules
 		$this->rights = array();
 		$r = 0;
 		$this->rights[$r][0] = $this->numero.sprintf("%02d", $r + 1); // 50012201
-		$this->rights[$r][1] = 'See the serial lifecycle tracker';
+		$this->rights[$r][1] = 'See deliverables (fulfillment & shortfall)';
 		$this->rights[$r][3] = 1;
 		$this->rights[$r][4] = 'read';
 		$this->rights[$r][5] = '';

@@ -3,7 +3,7 @@
 
 # Module
 Module500122Name = Deliverables
-Module500122Desc = Order-fulfillment / thing's-journey tracker (project + customer tabs, per-serial detail).
+Module500122Desc = Order-line fulfillment, ATP shortfall and reorder hub.
 
 # Tabs / titles
 DeliverablesTabTitle = Fulfillment
@@ -108,7 +108,7 @@ DeliverablesDetails = Details
 
 # Settings
 DeliverablesSetup = Deliverables setup
-DeliverablesSetupIntro = Prototype settings. Sample mode shows mock data for UX review; turn it off once live resolution is wired. Debug enables the admin-only discovery endpoint.
+DeliverablesSetupIntro = Tune the ATP shortfall calculation (demand time window, whether draft orders count as demand). Debug enables the admin-only discovery endpoint.
 DeliverablesSampleMode = Sample data mode
 DeliverablesSampleModeHelp = When enabled, every surface shows a coherent mock dataset (tagged "Sample data") instead of live order/shipment data. Turn off once live resolution is in place.
 DeliverablesDebugMode = Debug mode
@@ -116,4 +116,4 @@ DeliverablesDebugModeHelp = When enabled, admins can call the discovery endpoint
 DeliverablesDebugHint = Debug is on. Discovery endpoint: %s (admin only).
 
 # Permissions
-Permission50012201 = See the fulfillment / serial tracker
+Permission50012201 = See deliverables (fulfillment & shortfall)
