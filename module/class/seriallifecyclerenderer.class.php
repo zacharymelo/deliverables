@@ -67,9 +67,37 @@ class SerialLifecycleRenderer
 		}
 
 		foreach ($lines as $line) {
-			$out .= $this->renderLineRow($line);
+			if (!empty($line['is_summary'])) {
+				$out .= $this->renderSummaryRow($line);
+			} else {
+				$out .= $this->renderLineRow($line);
+			}
 		}
 
+		$out .= '</div>';
+		return $out;
+	}
+
+	/**
+	 *  Collapsed row for the non-serialized order lines (parts/fittings), so
+	 *  fulfillment of the extras is visible without cluttering the machine rows.
+	 *
+	 *  @param  array  $line  ['is_summary'=>true, 'lines', 'qty', 'shipped']
+	 *  @return string
+	 */
+	private function renderSummaryRow($line)
+	{
+		global $langs;
+
+		$n       = (int) $line['lines'];
+		$qty     = (int) $line['qty'];
+		$shipped = (int) $line['shipped'];
+
+		$out  = '<div class="serialtracker-line serialtracker-otherline">';
+		$out .= '<div class="serialtracker-ident"><span class="serialtracker-otherlabel">'
+			.dol_escape_htmltag($langs->trans('SerialtrackerOtherLines', $n)).'</span></div>';
+		$out .= '<div class="serialtracker-linebody"><span class="serialtracker-othermeta">'
+			.dol_escape_htmltag($langs->trans('SerialtrackerOtherShipped', $shipped, $qty)).'</span></div>';
 		$out .= '</div>';
 		return $out;
 	}
@@ -132,15 +160,16 @@ class SerialLifecycleRenderer
 
 		$stageClass = 'serialtracker-chip-'.preg_replace('/[^a-z]/', '', strtolower($stage));
 		$title = $this->stageTitle($stage);
+		$titleAttr = ($title !== '' ? ' title="'.dol_escape_htmltag($title).'"' : '');
 
-		$url = dol_buildpath('/serialtracker/serial_card.php', 1).'?id='.$lotId;
+		$inner = '<span class="serialtracker-chip-dot" aria-hidden="true"></span>'.dol_escape_htmltag($serial);
 
-		$out  = '<a class="serialtracker-chip '.$stageClass.'" href="'.dol_escape_htmltag($url).'"'
-			.($title !== '' ? ' title="'.dol_escape_htmltag($title).'"' : '').'>';
-		$out .= '<span class="serialtracker-chip-dot" aria-hidden="true"></span>';
-		$out .= dol_escape_htmltag($serial);
-		$out .= '</a>';
-		return $out;
+		// Only link when we have a lot record to open; otherwise show a plain chip.
+		if ($lotId > 0) {
+			$url = dol_buildpath('/serialtracker/serial_card.php', 1).'?id='.$lotId;
+			return '<a class="serialtracker-chip '.$stageClass.'" href="'.dol_escape_htmltag($url).'"'.$titleAttr.'>'.$inner.'</a>';
+		}
+		return '<span class="serialtracker-chip '.$stageClass.'"'.$titleAttr.'>'.$inner.'</span>';
 	}
 
 	/**

@@ -50,6 +50,13 @@ SerialtrackerCountOf = %s of %s
 SerialtrackerCountOfShort = %s ordered
 SerialtrackerQtyUnits = %s units
 
+# Collapsed non-serialized parts summary row
+SerialtrackerOtherLines = + %s other lines
+SerialtrackerOtherShipped = %s of %s units shipped
+
+# Back-half deferred (warranty module overhaul in progress)
+SerialtrackerWarrantyPending = Warranty integration pending
+
 # Slim summary line (project card)
 SerialtrackerSummaryUnits = %s units across %s lines
 SerialtrackerSummaryShipped = %s shipped

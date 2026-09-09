@@ -166,28 +166,19 @@ if ($projectId > 0) {
 			."  OR (ee.targettype = 'project' AND ee.fk_target = ".$pid." AND ee.sourcetype = 'shipping')",
 		50
 	);
-	$out['shipments_via_orders'] = st_probe(
-		$db,
-		"SELECT e.rowid as expedition_id, e.ref as expedition_ref, c.rowid as commande_id, c.ref as commande_ref"
-			." FROM ".MAIN_DB_PREFIX."commande c"
-			." INNER JOIN ".MAIN_DB_PREFIX."expedition e ON e.fk_origin = 'commande' AND e.origin_id = c.rowid"
-			." WHERE c.fk_projet = ".$pid,
-		50
-	);
-
-	// THE KEY TIE: order line -> shipment line -> batch/lot (serial attached at shipment).
-	// Best-effort join through the project's orders; if a column name is off the
-	// error text names the right one (nothing 500s).
+	// THE KEY TIE (verified schema): shipment -> shipment line (-> order line) ->
+	// batch/lot. Expedition attaches to the project directly via fk_projet; the
+	// order line is expeditiondet.element_type='commande' + fk_elementdet.
 	$out['shipment_batch_lots'] = st_probe(
 		$db,
-		"SELECT e.rowid as expedition_id, e.ref as ship_ref,"
-			." ed.rowid as expeditiondet_id, ed.fk_origin_line as order_line_id,"
-			." eb.batch, eb.qty as batch_qty, eb.fk_origin_stock"
-			." FROM ".MAIN_DB_PREFIX."commande c"
-			." INNER JOIN ".MAIN_DB_PREFIX."expedition e ON e.fk_origin = 'commande' AND e.origin_id = c.rowid"
-			." INNER JOIN ".MAIN_DB_PREFIX."expeditiondet ed ON ed.fk_expedition = e.rowid"
+		"SELECT e.rowid as expedition_id, e.ref as ship_ref, e.fk_statut,"
+			." ed.rowid as expeditiondet_id, ed.fk_elementdet as order_line_id, ed.fk_product, ed.qty,"
+			." eb.batch, eb.qty as batch_qty, pl.rowid as lot_id"
+			." FROM ".MAIN_DB_PREFIX."expedition e"
+			." INNER JOIN ".MAIN_DB_PREFIX."expeditiondet ed ON ed.fk_expedition = e.rowid AND ed.element_type = 'commande'"
 			." LEFT JOIN ".MAIN_DB_PREFIX."expeditiondet_batch eb ON eb.fk_expeditiondet = ed.rowid"
-			." WHERE c.fk_projet = ".$pid,
+			." LEFT JOIN ".MAIN_DB_PREFIX."product_lot pl ON pl.batch = eb.batch AND pl.fk_product = ed.fk_product"
+			." WHERE e.fk_projet = ".$pid,
 		200
 	);
 }

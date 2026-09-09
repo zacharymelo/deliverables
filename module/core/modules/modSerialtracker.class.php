@@ -61,7 +61,7 @@ class modSerialtracker extends DolibarrModules
 		$this->editor_name = 'Serial Tracker contributors';
 		$this->editor_url = '';
 
-		$this->version = '0.3.2';
+		$this->version = '0.4.0';
 
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 
