@@ -16,9 +16,11 @@
  */
 
 /**
- *  \file       serial_card.php
+ *  \file       lot_fulfillment.php
  *  \ingroup    deliverables
- *  \brief      Per-serial detail: back-half journey + MO/production trace by lot.
+ *  \brief      Tab on the NATIVE product-lot card: this serial's fulfillment
+ *              synthesis (journey + linked order/shipment/MO/customer records).
+ *              Augments the native lot card rather than rebuilding it.
  */
 
 // Load Dolibarr environment
@@ -42,12 +44,14 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+require_once DOL_DOCUMENT_ROOT.'/product/stock/class/productlot.class.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/product.lib.php';
 dol_include_once('/deliverables/class/deliverablesresolver.class.php');
 dol_include_once('/deliverables/class/deliverablesrenderer.class.php');
 
-$langs->loadLangs(array('deliverables@deliverables'));
+$langs->loadLangs(array('products', 'deliverables@deliverables'));
 
-$id = GETPOSTINT('id'); // product_lot rowid
+$id = GETPOSTINT('id');
 
 if (!isModEnabled('deliverables')) {
 	accessforbidden('Module not enabled');
@@ -56,29 +60,43 @@ if (!$user->hasRight('deliverables', 'read')) {
 	accessforbidden();
 }
 
-$resolver = new DeliverablesResolver($db);
-$serial   = $resolver->resolveSerial($id);
-
-if (empty($serial)) {
-	accessforbidden('Serial not found');
+$object = new Productlot($db);
+if ($id > 0) {
+	$object->fetch($id);
+}
+if (empty($object->id)) {
+	accessforbidden('Lot not found');
 }
 
-$title = $langs->trans('DeliverablesSerialTitle').' - '.$serial['serial'];
+$title = $langs->trans('DeliverablesTabTitle').' - '.$object->batch;
 llxHeader('', $title);
+
+$head = productlot_prepare_head($object);
+print dol_get_fiche_head($head, 'deliverables', $langs->trans('Batch'), -1, (empty($object->picto) ? 'lot' : $object->picto));
+
+$linkback = '<a href="'.DOL_URL_ROOT.'/product/stock/productlot_list.php?restore_lastsearch_values=1">'.$langs->trans("BackToList").'</a>';
+dol_banner_tab($object, 'id', $linkback, 1, 'rowid', 'batch', '');
+
+print '<div class="fichecenter">';
 
 $cssfile = dol_buildpath('/deliverables/css/deliverables.css', 0);
 $cssurl  = dol_buildpath('/deliverables/css/deliverables.css', 1).'?v='.(is_file($cssfile) ? filemtime($cssfile) : '1');
 print '<link rel="stylesheet" type="text/css" href="'.dol_escape_htmltag($cssurl).'">'."\n";
 
-// Header line: serial ref + product.
-$head = dol_escape_htmltag($serial['serial']);
-if (!empty($serial['product'])) {
-	$head .= ' <span class="opacitymedium">'.dol_escape_htmltag($serial['product']).'</span>';
-}
-print load_fiche_titre($langs->trans('DeliverablesSerialTitle').' '.$head, '', 'barcode');
+$resolver = new DeliverablesResolver($db);
+$serial   = $resolver->resolveSerial($object->id);
 
 $renderer = new DeliverablesRenderer();
-print $renderer->renderSerialDetail($serial);
+
+if (empty($serial)) {
+	print '<div class="opacitymedium">'.$langs->trans('DeliverablesNoSerial').'</div>';
+} else {
+	print $renderer->renderSerialDetail($serial);
+}
+
+print '</div>';
+
+print dol_get_fiche_end();
 
 llxFooter();
 $db->close();

@@ -12,6 +12,7 @@ DeliverablesSerialTitle = Serial
 DeliverablesSampleTag = Sample data
 DeliverablesViewAll = View all
 DeliverablesNoLines = No order lines to track yet.
+DeliverablesNoSerial = No fulfillment data for this serial yet.
 
 # Front-half stages (per order line)
 DeliverablesStageOrdered = Ordered

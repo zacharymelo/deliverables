@@ -166,7 +166,7 @@ class DeliverablesRenderer
 
 		// Only link when we have a lot record to open; otherwise show a plain chip.
 		if ($lotId > 0) {
-			$url = dol_buildpath('/deliverables/serial_card.php', 1).'?id='.$lotId;
+			$url = DOL_URL_ROOT.'/product/stock/productlot_card.php?id='.$lotId;
 			return '<a class="deliverables-chip '.$stageClass.'" href="'.dol_escape_htmltag($url).'"'.$titleAttr.'>'.$inner.'</a>';
 		}
 		return '<span class="deliverables-chip '.$stageClass.'"'.$titleAttr.'>'.$inner.'</span>';
@@ -191,7 +191,7 @@ class DeliverablesRenderer
 	}
 
 	// -------------------------------------------------------------------------
-	// Serial detail (serial_card.php)
+	// Serial detail (rendered as a tab on the native product-lot card — lot_fulfillment.php)
 	// -------------------------------------------------------------------------
 
 	/**
@@ -444,7 +444,7 @@ class DeliverablesRenderer
 				$lotId  = (int) $srl['lot_id'];
 				$serial = dol_escape_htmltag($srl['serial']);
 				if ($lotId > 0) {
-					$u = dol_buildpath('/deliverables/serial_card.php', 1).'?id='.$lotId;
+					$u = DOL_URL_ROOT.'/product/stock/productlot_card.php?id='.$lotId;
 					$out .= '<a class="deliverables-chip" href="'.dol_escape_htmltag($u).'">'.$serial.'</a> ';
 				} else {
 					$out .= '<span class="deliverables-chip">'.$serial.'</span> ';
