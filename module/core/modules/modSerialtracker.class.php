@@ -18,13 +18,16 @@
 /**
  *  \file       core/modules/modSerialtracker.class.php
  *  \ingroup    serialtracker
- *  \brief      Module descriptor for Serial Tracker (UX prototype)
+ *  \brief      Module descriptor for Serial Tracker
  *
- *  Serial Tracker is a prototype, installable ALONGSIDE Lead Tracker, that
- *  renders a per-serial lifecycle step-indicator (Manufactured -> Shipped ->
- *  Under Warranty -> Support Ended) as a list on the project card — one row per
- *  serial (product_lot). Built so staff can compare it against the sales funnel.
- *  Read-only: no automation, no core file changes.
+ *  An internal fulfillment / supply-readiness hub anchored on the order line.
+ *  On the project and customer cards it renders a deliverables table — Ordered /
+ *  Shipped / Outstanding per line, the product's company-wide ATP shortfall, and
+ *  a one-click Create MO (manufactured) or Reorder (purchased, with cheapest /
+ *  fastest supplier sourcing) — plus a per-serial detail page for the back half
+ *  (manufacture -> ship -> warranty -> support). Read-only over native data
+ *  (commande / expedition / product_stock / mrp_mo / product_fournisseur_price);
+ *  no core file changes. (A rename is proposed — this shifted well past "serial".)
  */
 
 include_once DOL_DOCUMENT_ROOT.'/core/modules/DolibarrModules.class.php';

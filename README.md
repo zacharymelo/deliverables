@@ -9,7 +9,11 @@ An internal **fulfillment + install-base hub** for Dolibarr, anchored on the
 - **Project & Customer → Fulfillment tab** — a **deliverables table**: every order
   line with Ordered / Shipped / Outstanding, deduped serial chips, and the
   product's company-wide **ATP shortfall**, with a one-click **Create MO**
-  (manufactured) or **Reorder** (purchased) action. Actionable rows sort first.
+  (manufactured) or **Reorder** (purchased) action. Reorder surfaces the
+  **cheapest** and (if a different vendor) the **fastest** supplier — unit price +
+  `delivery_time_days` lead — and pre-selects the chosen vendor in the PO seed.
+  Product name → product card (icon link); order ref → sales-order card.
+  Actionable rows (shortfall, then outstanding) sort first.
 - **Serial detail** (`serial_card.php`) — one serial's back-half: Manufactured
   (traced by lot) → Shipped → Under Warranty → Support Ended, plus context.
 - **Slim summary** on the project main card → links into the tab.
