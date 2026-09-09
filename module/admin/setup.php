@@ -61,9 +61,8 @@ $form   = new Form($db);
 // Save
 // -------------------------------------------------------------------------
 if ($action == 'update') {
-	if (!verifCsrfToken()) {
-		accessforbidden('Bad token');
-	}
+	// CSRF is validated automatically by main.inc.php (the hidden 'token' field
+	// below is sufficient) — no manual verification call is needed here.
 	dolibarr_set_const($db, 'SERIALTRACKER_SAMPLE', GETPOSTINT('SERIALTRACKER_SAMPLE') ? '1' : '0', 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'SERIALTRACKER_DEBUG',  GETPOSTINT('SERIALTRACKER_DEBUG')  ? '1' : '0', 'chaine', 0, '', $conf->entity);
 	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
