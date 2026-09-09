@@ -63,5 +63,14 @@ SerialtrackerFieldOrder = Order
 SerialtrackerFieldProject = Project
 SerialtrackerFieldThirdparty = Customer
 
+# Settings
+SerialtrackerSetup = Serial Tracker setup
+SerialtrackerSetupIntro = Prototype settings. Sample mode shows mock data for UX review; turn it off once live resolution is wired. Debug enables the admin-only discovery endpoint.
+SerialtrackerSampleMode = Sample data mode
+SerialtrackerSampleModeHelp = When enabled, every surface shows a coherent mock dataset (tagged "Sample data") instead of live order/shipment data. Turn off once live resolution is in place.
+SerialtrackerDebugMode = Debug mode
+SerialtrackerDebugModeHelp = When enabled, admins can call the discovery endpoint (ajax/debug.php) used to map the order to shipment to lot linkage.
+SerialtrackerDebugHint = Debug is on. Discovery endpoint: %s (admin only).
+
 # Permissions
 Permission50012201 = See the fulfillment / serial tracker

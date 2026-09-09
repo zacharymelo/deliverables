@@ -61,7 +61,7 @@ class modSerialtracker extends DolibarrModules
 		$this->editor_name = 'Serial Tracker contributors';
 		$this->editor_url = '';
 
-		$this->version = '0.2.0';
+		$this->version = '0.3.0';
 
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 
@@ -92,7 +92,7 @@ class modSerialtracker extends DolibarrModules
 		$this->tabs[] = array('data' => 'project:+serialtracker:SerialtrackerTabTitle:serialtracker@serialtracker:$user->hasRight(\'serialtracker\', \'read\'):/serialtracker/project_fulfillment.php?id=__ID__');
 		$this->tabs[] = array('data' => 'thirdparty:+serialtracker:SerialtrackerTabTitle:serialtracker@serialtracker:$user->hasRight(\'serialtracker\', \'read\'):/serialtracker/thirdparty_fulfillment.php?id=__ID__');
 
-		$this->config_page_url = array();
+		$this->config_page_url = array("setup.php@serialtracker");
 
 		$this->hidden = false;
 		$this->depends = array('modProjet');
