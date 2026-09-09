@@ -109,11 +109,25 @@ $out['table_discovery'] = st_probe(
 	200
 );
 
-// --- product_lot: the serial identity spine ---
-$out['product_lot_sample'] = st_probe($db, "SELECT * FROM ".MAIN_DB_PREFIX."product_lot ORDER BY rowid DESC LIMIT 5", 5);
-
-// --- MRP / Manufacturing Orders ---
-$out['mrp_mo_sample'] = st_probe($db, "SELECT * FROM ".MAIN_DB_PREFIX."mrp_mo ORDER BY rowid DESC LIMIT 3", 3);
+// --- Sample rows (columns + data) from each discovered candidate table, so the
+//     warranty / RMA / batch / lot / MO schemas reveal themselves without any
+//     column guessing. Names come straight from information_schema (already
+//     prefixed for this install). ---
+$out['candidate_table_samples'] = array();
+if (!empty($out['table_discovery']['rows'])) {
+	foreach ($out['table_discovery']['rows'] as $trow) {
+		$tname = isset($trow->table_name) ? $trow->table_name : (isset($trow->TABLE_NAME) ? $trow->TABLE_NAME : '');
+		$tname = preg_replace('/[^A-Za-z0-9_]/', '', (string) $tname);
+		if ($tname === '') {
+			continue;
+		}
+		// Only the tables likely to carry lifecycle evidence — keep the payload lean.
+		if (!preg_match('/(warrant|rma|return|lot|batch|mrp|expeditiondet)/i', $tname)) {
+			continue;
+		}
+		$out['candidate_table_samples'][$tname] = st_probe($db, "SELECT * FROM ".$tname." LIMIT 3", 3);
+	}
+}
 
 $projectId = GETPOSTINT('project_id');
 $out['project_id'] = $projectId;
@@ -121,17 +135,29 @@ $out['project_id'] = $projectId;
 if ($projectId > 0) {
 	$pid = (int) $projectId;
 
-	// Project's company (warranty links to third party).
+	// Project's company (warranty links to the third party).
 	$out['project'] = st_probe($db, "SELECT rowid, ref, fk_soc, fk_statut FROM ".MAIN_DB_PREFIX."projet WHERE rowid = ".$pid, 1);
 
-	// Candidate path A: shipments carrying fk_projet directly.
+	// FRONT-HALF ANCHOR: the project's sales-order lines (product + qty).
+	$out['order_lines'] = st_probe(
+		$db,
+		"SELECT c.rowid as commande_id, c.ref as order_ref, c.fk_soc,"
+			." cd.rowid as line_id, cd.fk_product, cd.qty,"
+			." p.ref as product_ref, p.label as product_label"
+			." FROM ".MAIN_DB_PREFIX."commande c"
+			." INNER JOIN ".MAIN_DB_PREFIX."commandedet cd ON cd.fk_commande = c.rowid"
+			." LEFT JOIN ".MAIN_DB_PREFIX."product p ON p.rowid = cd.fk_product"
+			." WHERE c.fk_projet = ".$pid
+			." ORDER BY c.rowid DESC, cd.rowid",
+		100
+	);
+
+	// Shipments for the project (three candidate link paths).
 	$out['shipments_by_project'] = st_probe(
 		$db,
 		"SELECT rowid, ref, fk_soc, fk_projet FROM ".MAIN_DB_PREFIX."expedition WHERE fk_projet = ".$pid." ORDER BY rowid DESC",
 		50
 	);
-
-	// Candidate path B: shipments linked to the project via element_element.
 	$out['shipments_via_element_element'] = st_probe(
 		$db,
 		"SELECT ee.fk_source, ee.sourcetype, ee.fk_target, ee.targettype"
@@ -140,8 +166,6 @@ if ($projectId > 0) {
 			."  OR (ee.targettype = 'project' AND ee.fk_target = ".$pid." AND ee.sourcetype = 'shipping')",
 		50
 	);
-
-	// Candidate path C: shipments via the project's orders (commande.fk_projet -> expedition.fk_origin).
 	$out['shipments_via_orders'] = st_probe(
 		$db,
 		"SELECT e.rowid as expedition_id, e.ref as expedition_ref, c.rowid as commande_id, c.ref as commande_ref"
@@ -149,6 +173,22 @@ if ($projectId > 0) {
 			." INNER JOIN ".MAIN_DB_PREFIX."expedition e ON e.fk_origin = 'commande' AND e.origin_id = c.rowid"
 			." WHERE c.fk_projet = ".$pid,
 		50
+	);
+
+	// THE KEY TIE: order line -> shipment line -> batch/lot (serial attached at shipment).
+	// Best-effort join through the project's orders; if a column name is off the
+	// error text names the right one (nothing 500s).
+	$out['shipment_batch_lots'] = st_probe(
+		$db,
+		"SELECT e.rowid as expedition_id, e.ref as ship_ref,"
+			." ed.rowid as expeditiondet_id, ed.fk_origin_line as order_line_id,"
+			." eb.batch, eb.qty as batch_qty, eb.fk_origin_stock"
+			." FROM ".MAIN_DB_PREFIX."commande c"
+			." INNER JOIN ".MAIN_DB_PREFIX."expedition e ON e.fk_origin = 'commande' AND e.origin_id = c.rowid"
+			." INNER JOIN ".MAIN_DB_PREFIX."expeditiondet ed ON ed.fk_expedition = e.rowid"
+			." LEFT JOIN ".MAIN_DB_PREFIX."expeditiondet_batch eb ON eb.fk_expeditiondet = ed.rowid"
+			." WHERE c.fk_projet = ".$pid,
+		200
 	);
 }
 
